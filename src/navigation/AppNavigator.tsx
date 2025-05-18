@@ -13,6 +13,7 @@ import QuizScreen from "../screens/QuizScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import WordListScreen from "../screens/WordListScreen";
 import WordDetailScreen from "../screens/WordDetailScreen";
+import QuizDetailScreen from "../screens/QuizDetailScreen";
 
 // Create navigation stacks/tabs
 const Tab = createBottomTabNavigator();
@@ -45,6 +46,7 @@ const QuizStackNavigator = () => {
   return (
     <QuizStack.Navigator>
       <QuizStack.Screen name="Quizzes" component={QuizScreen} options={{ title: "Quizzes" }} />
+      <QuizStack.Screen name="QuizDetail" component={QuizDetailScreen} options={{ title: "Quiz" }} />
     </QuizStack.Navigator>
   );
 };
