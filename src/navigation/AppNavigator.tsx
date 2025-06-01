@@ -16,6 +16,7 @@ import RegisterScreen from "../screens/RegisterScreen"
 import ForgotPasswordScreen from "../screens/ForgotPasswordScreen"
 import HomeScreen from "../screens/HomeScreen"
 import LessonScreen from "../screens/LessonScreen"
+import LessonDetailScreen from "../screens/LessonDetailScreen"
 import QuizScreen from "../screens/QuizScreen"
 import ProfileScreen from "../screens/ProfileScreen"
 import WordListScreen from "../screens/WordListScreen"
@@ -56,7 +57,7 @@ const LessonStackNavigator = () => {
   return (
     <LessonStack.Navigator>
       <LessonStack.Screen name="Lessons" component={LessonScreen} options={{ title: "Lessons" }} />
-      {/* <LessonStack.Screen name="LessonDetail" component={LessonDetailScreen} options={{ headerShown: false }} /> */}
+      <LessonStack.Screen name="LessonDetail" component={LessonDetailScreen} options={{ headerShown: false }} />
     </LessonStack.Navigator>
   )
 }

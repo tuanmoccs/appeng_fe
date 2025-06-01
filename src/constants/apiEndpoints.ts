@@ -22,6 +22,7 @@ export const ENDPOINTS = {
   LESSON_WORDS: (id: number) => `/lessons/${id}/words`,
   LESSON_COMPLETE: (id: number) => `/lessons/${id}/complete`,
   LESSON_PROGRESS: (id: number) => `/lessons/${id}/progress`,
+  LESSON_STATS: "/lessons/stats",
 
   // Word endpoints
   WORDS: "/words",

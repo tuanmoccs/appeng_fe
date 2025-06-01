@@ -195,7 +195,7 @@ export const checkAuth = async (): Promise<boolean> => {
     console.log("✅ Auth check successful")
     return !!response.data
   } catch (error: any) {
-    console.error("❌ Check auth error:", error)
+    // console.error("❌ Check auth error:", error)
 
     if (error.response) {
       console.error("Auth check error details:", {

@@ -1,4 +1,3 @@
-
 import api from "./api"
 import { ENDPOINTS } from "../constants/apiEndpoints"
 
@@ -15,7 +14,7 @@ export interface LessonSection {
 
 export interface LessonContent {
   sections: LessonSection[]
-  duration: number
+  duration?: number
 }
 
 export interface Lesson {
@@ -48,7 +47,7 @@ export interface LessonStats {
 export const getLessons = async (): Promise<Lesson[]> => {
   try {
     const response = await api.get(ENDPOINTS.LESSONS)
-    return response.data.lessons
+    return response.data.lessons || response.data
   } catch (error) {
     console.error("Get lessons error:", error)
     throw error
@@ -58,7 +57,7 @@ export const getLessons = async (): Promise<Lesson[]> => {
 export const getLessonById = async (lessonId: number): Promise<Lesson> => {
   try {
     const response = await api.get(ENDPOINTS.LESSON_DETAIL(lessonId))
-    return response.data.lesson
+    return response.data.lesson || response.data
   } catch (error) {
     console.error(`Get lesson ${lessonId} error:`, error)
     throw error
@@ -96,8 +95,8 @@ export const completeLesson = async (lessonId: number) => {
 
 export const getLessonStats = async (): Promise<LessonStats> => {
   try {
-    const response = await api.get("/lesson/stats")
-    return response.data.stats
+    const response = await api.get(ENDPOINTS.LESSON_STATS)
+    return response.data.stats || response.data
   } catch (error) {
     console.error("Get lesson stats error:", error)
     throw error
