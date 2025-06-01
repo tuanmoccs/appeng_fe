@@ -1,5 +1,3 @@
-"use client"
-
 // src/screens/LessonScreen.tsx
 import { useState, useEffect } from "react"
 import {

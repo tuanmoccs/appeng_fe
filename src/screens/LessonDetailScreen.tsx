@@ -1,5 +1,3 @@
-"use client"
-
 // src/screens/LessonDetailScreen.tsx
 import { useState, useEffect } from "react"
 import {
@@ -14,8 +12,8 @@ import {
 } from "react-native"
 import { COLORS } from "../constants/colors"
 import Button from "../components/Button"
-import { getLessonById, updateLessonProgress, completeLesson } from "../services/lessonService"
-import type { Lesson, LessonItem } from "../services/lessonService"
+import { getLessonById, updateLessonProgress, completeLesson } from "../services/LessonService"
+import type { Lesson, LessonItem } from "../services/LessonService"
 
 const { width } = Dimensions.get("window")
 
@@ -47,7 +45,12 @@ const LessonDetailScreen = ({ route, navigation }: any) => {
     }
   }
 
-  const calculateProgress = () => {
+  const calculateProgress = (currentSec?: number, currentIt?: number, completedSet?: Set<string>) => {
+    // Sử dụng giá trị hiện tại nếu không có tham số truyền vào
+    const sec = currentSec !== undefined ? currentSec : currentSection;
+    const it = currentIt !== undefined ? currentIt : currentItem;
+    const completed = completedSet || completedItems;
+
     if (!lesson?.content?.sections) return 0
 
     let totalItems = 0
@@ -62,9 +65,9 @@ const LessonDetailScreen = ({ route, navigation }: any) => {
         // 2. Thuộc section đã qua
         // 3. Thuộc section hiện tại và index <= current item
         const itemKey = `${sectionIndex}-${itemIndex}`
-        const isInCompletedSection = sectionIndex < currentSection
-        const isCurrentSectionCompletedItem = sectionIndex === currentSection && itemIndex <= currentItem
-        const isMarkedCompleted = completedItems.has(itemKey)
+        const isInCompletedSection = sectionIndex < sec
+        const isCurrentSectionCompletedItem = sectionIndex === sec && itemIndex <= it
+        const isMarkedCompleted = completed.has(itemKey)
 
         if (isInCompletedSection || isCurrentSectionCompletedItem || isMarkedCompleted) {
           completedCount++
@@ -92,34 +95,44 @@ const LessonDetailScreen = ({ route, navigation }: any) => {
     const currentSectionData = lesson.content.sections[currentSection]
     const itemKey = `${currentSection}-${currentItem}`
 
-    // Mark current item as completed
-    setCompletedItems((prev) => new Set([...prev, itemKey]))
+    // Tạo set mới với item hiện tại được đánh dấu completed
+    const newCompletedItems = new Set([...completedItems, itemKey])
+
+    let newSection = currentSection
+    let newItem = currentItem
 
     if (currentItem < currentSectionData.items.length - 1) {
       // Next item in current section
-      setCurrentItem(currentItem + 1)
+      newItem = currentItem + 1
     } else if (currentSection < lesson.content.sections.length - 1) {
       // Next section
-      setCurrentSection(currentSection + 1)
-      setCurrentItem(0)
+      newSection = currentSection + 1
+      newItem = 0
     } else {
       // Lesson completed - tự động hoàn thành với 100%
       handleCompleteLesson()
       return
     }
+    const newProgress = calculateProgress(newSection, newItem, newCompletedItems)
 
-    setShowMeaning(false)
+      // Cập nhật state
+      setCompletedItems(newCompletedItems)
+      setCurrentSection(newSection)
+      setCurrentItem(newItem)
+      setShowMeaning(false)
 
-    // Tính toán progress mới
-    const newProgress = calculateProgress()
-    updateProgressToServer(newProgress)
+      // Cập nhật progress lên server
+      updateProgressToServer(newProgress, newSection, newItem)
   }
 
-  const updateProgressToServer = async (progress: number) => {
+  const updateProgressToServer = async (progress: number, section?: number, item?: number) => {
     if (!lesson) return
 
+    const sec = section !== undefined ? section : currentSection
+    const it = item !== undefined ? item : currentItem
+
     try {
-      await updateLessonProgress(lesson.id, progress, currentSection, currentItem)
+      await updateLessonProgress(lesson.id, progress, sec, it)
     } catch (error) {
       console.error("Error updating progress:", error)
     }
