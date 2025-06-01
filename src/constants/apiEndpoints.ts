@@ -1,6 +1,6 @@
 // src/constants/apiEndpoints.ts
 // Base API URL - Update to your actual backend URL
-export const API_BASE_URL = "http://10.0.2.2:8000/api"; // 10.0.2.2 points to host machine's localhost from Android emulator
+export const API_BASE_URL = "http://10.0.2.2:8000/api" // 10.0.2.2 points to host machine's localhost from Android emulator
 
 // API endpoints
 export const ENDPOINTS = {
@@ -8,7 +8,13 @@ export const ENDPOINTS = {
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   LOGOUT: "/auth/logout",
+  USER: "/auth/user",
   USER_PROFILE: "/auth/user",
+  FORGOT_PASSWORD: "/auth/forgot-password",
+  UPDATE_PROFILE: "/auth/profile",
+  CHANGE_PASSWORD: "/auth/change-password",
+  USER_ACHIEVEMENTS: "/auth/achievements",
+  USER_STATS: "/auth/stats",
 
   // Lesson endpoints
   LESSONS: "/lessons",
@@ -27,6 +33,5 @@ export const ENDPOINTS = {
   QUIZ_SUBMIT: (id: number) => `/quizzes/${id}/submit`,
 
   // User endpoints
-  USER_STATS: "/user/stats",
-  USER_ACHIEVEMENTS: "/user/achievements",
-};
+  USER_QUIZ_RESULTS: "/user/quiz-results",
+}

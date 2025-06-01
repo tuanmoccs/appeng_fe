@@ -1,43 +1,132 @@
+"use client"
+
 // src/screens/HomeScreen.tsx
-import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { COLORS } from "../constants/colors";
-import Button from "../components/Button";
+import { useEffect, useState } from "react"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from "react-native"
+import { useSelector } from "react-redux"
+import { COLORS } from "../constants/colors"
+import StatCard from "../components/StatCard"
+import { getUserStats } from "../services/profileService"
+import type { RootState } from "../store/store"
+import type { UserStats } from "../services/profileService"
 
 const HomeScreen = ({ navigation }: any) => {
+  const { user } = useSelector((state: RootState) => state.auth)
+  const [stats, setStats] = useState<UserStats | null>(null)
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  const fetchStats = async () => {
+    try {
+      const statsData = await getUserStats()
+      setStats(statsData)
+    } catch (error) {
+      console.error("Error fetching stats:", error)
+    }
+  }
+
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return "Chào buổi sáng"
+    if (hour < 18) return "Chào buổi chiều"
+    return "Chào buổi tối"
+  }
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Language Learning App</Text>
-        <Text style={styles.subtitle}>Expand your vocabulary today!</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.greetingSection}>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.userName}>{user?.name}! 👋</Text>
+            <Text style={styles.subtitle}>Hôm nay bạn muốn học gì?</Text>
+          </View>
+          <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate("ProfileTab")}>
+            <Image
+              source={user?.avatar ? { uri: user.avatar } : require("../assets/images/th (2).jpg")}
+              style={styles.avatar}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Learn New Words</Text>
-          <Text style={styles.cardDescription}>
-            Browse through our vocabulary list and learn new words with translations and examples.
-          </Text>
-          <Button title="View Words" onPress={() => navigation.navigate("WordsTab")} style={styles.button} />
+      {/* Quick Stats */}
+      {stats && (
+        <View style={styles.quickStats}>
+          <Text style={styles.sectionTitle}>📊 Tiến độ hôm nay</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <StatCard title="Streak" value={`${stats.current_streak} ngày`} icon="🔥" color={COLORS.WARNING} />
+            </View>
+            <View style={styles.statItem}>
+              <StatCard
+                title="Quiz hoàn thành"
+                value={stats.total_quizzes_completed}
+                icon="✅"
+                color={COLORS.SUCCESS}
+              />
+            </View>
+          </View>
         </View>
+      )}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Take Lessons</Text>
-          <Text style={styles.cardDescription}>
-            Follow structured lessons to improve your language skills step by step.
-          </Text>
-          <Button title="Go to Lessons" onPress={() => navigation.navigate("LessonsTab")} style={styles.button} />
+      {/* Main Actions */}
+      <View style={styles.mainActions}>
+        <Text style={styles.sectionTitle}>🚀 Bắt đầu học</Text>
+
+        <TouchableOpacity style={styles.primaryCard} onPress={() => navigation.navigate("LessonsTab")}>
+          <View style={styles.cardContent}>
+            <View style={styles.cardIcon}>
+              <Text style={styles.cardIconText}>📚</Text>
+            </View>
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardTitle}>Bài học mới</Text>
+              <Text style={styles.cardDescription}>Khám phá các bài học được cấu trúc từ cơ bản đến nâng cao</Text>
+            </View>
+            <View style={styles.cardArrow}>
+              <Text style={styles.arrowText}>→</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.secondaryCards}>
+          <TouchableOpacity style={styles.secondaryCard} onPress={() => navigation.navigate("WordsTab")}>
+            <View style={styles.secondaryCardIcon}>
+              <Text style={styles.secondaryCardIconText}>📝</Text>
+            </View>
+            <Text style={styles.secondaryCardTitle}>Từ vựng</Text>
+            <Text style={styles.secondaryCardDescription}>Học từ mới với hình ảnh và ví dụ</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.secondaryCard} onPress={() => navigation.navigate("QuizzesTab")}>
+            <View style={styles.secondaryCardIcon}>
+              <Text style={styles.secondaryCardIconText}>🧠</Text>
+            </View>
+            <Text style={styles.secondaryCardTitle}>Kiểm tra</Text>
+            <Text style={styles.secondaryCardDescription}>Thử thách bản thân với các quiz</Text>
+          </TouchableOpacity>
         </View>
+      </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Test Your Knowledge</Text>
-          <Text style={styles.cardDescription}>Challenge yourself with quizzes to reinforce what you've learned.</Text>
-          <Button title="Try Quizzes" onPress={() => navigation.navigate("QuizzesTab")} style={styles.button} />
+      {/* Learning Tips */}
+      <View style={styles.tipsSection}>
+        <Text style={styles.sectionTitle}>💡 Mẹo học tập</Text>
+        <View style={styles.tipCard}>
+          <Text style={styles.tipIcon}>🎯</Text>
+          <View style={styles.tipContent}>
+            <Text style={styles.tipTitle}>Học đều đặn mỗi ngày</Text>
+            <Text style={styles.tipDescription}>
+              Chỉ cần 15-20 phút mỗi ngày để duy trì và cải thiện kỹ năng ngôn ngữ của bạn
+            </Text>
+          </View>
         </View>
       </View>
     </ScrollView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -45,11 +134,26 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.BACKGROUND,
   },
   header: {
-    padding: 20,
     backgroundColor: COLORS.PRIMARY,
+    paddingTop: 50,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  title: {
+  greetingSection: {
+    flex: 1,
+  },
+  greeting: {
+    fontSize: 16,
+    color: COLORS.WHITE,
+    opacity: 0.9,
+    marginBottom: 4,
+  },
+  userName: {
     fontSize: 24,
     fontWeight: "bold",
     color: COLORS.WHITE,
@@ -58,36 +162,163 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: COLORS.WHITE,
-    opacity: 0.9,
+    opacity: 0.8,
   },
-  cardContainer: {
-    padding: 16,
+  avatarContainer: {
+    marginLeft: 16,
   },
-  card: {
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: COLORS.WHITE,
+  },
+  quickStats: {
+    padding: 20,
+    paddingBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.TEXT_PRIMARY,
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  statItem: {
+    flex: 1,
+  },
+  mainActions: {
+    padding: 20,
+    paddingTop: 10,
+  },
+  primaryCard: {
     backgroundColor: COLORS.WHITE,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 16,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cardContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cardIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.PRIMARY_LIGHT + "20",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  cardIconText: {
+    fontSize: 24,
+  },
+  cardInfo: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.TEXT_PRIMARY,
+    marginBottom: 4,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    lineHeight: 20,
+  },
+  cardArrow: {
+    marginLeft: 12,
+  },
+  arrowText: {
+    fontSize: 20,
+    color: COLORS.PRIMARY,
+    fontWeight: "bold",
+  },
+  secondaryCards: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  secondaryCard: {
+    flex: 1,
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
     shadowColor: COLORS.BLACK,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  cardTitle: {
-    fontSize: 18,
+  secondaryCardIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.SECONDARY + "20",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  secondaryCardIconText: {
+    fontSize: 20,
+  },
+  secondaryCardTitle: {
+    fontSize: 16,
     fontWeight: "bold",
     color: COLORS.TEXT_PRIMARY,
     marginBottom: 8,
+    textAlign: "center",
   },
-  cardDescription: {
+  secondaryCardDescription: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: "center",
+    lineHeight: 16,
+  },
+  tipsSection: {
+    padding: 20,
+    paddingTop: 10,
+  },
+  tipCard: {
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    shadowColor: COLORS.BLACK,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tipIcon: {
+    fontSize: 24,
+    marginRight: 16,
+  },
+  tipContent: {
+    flex: 1,
+  },
+  tipTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.TEXT_PRIMARY,
+    marginBottom: 4,
+  },
+  tipDescription: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
-    marginBottom: 16,
+    lineHeight: 20,
   },
-  button: {
-    alignSelf: "flex-start",
-  },
-});
+})
 
-export default HomeScreen;
+export default HomeScreen
