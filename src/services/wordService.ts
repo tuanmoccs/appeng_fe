@@ -1,4 +1,4 @@
-// src/services/wordService.ts
+
 import api from "./api";
 import { ENDPOINTS } from "../constants/apiEndpoints";
 import { Word } from "../types/lesson";
