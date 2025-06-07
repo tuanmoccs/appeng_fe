@@ -32,7 +32,12 @@ export const ENDPOINTS = {
   QUIZZES: "/quizzes",
   QUIZ_DETAIL: (id: number) => `/quizzes/${id}`,
   QUIZ_SUBMIT: (id: number) => `/quizzes/${id}/submit`,
+  //Test endpoints
+  TESTS: "/tests",
+  TEST_DETAIL: (id:number) => `/tests/${id}`,
+  TEST_SUBMIT: (id:number) => `/tests/${id}/submit`,
+  TEST_RESULT: (id:number) => `/tests/${id}/results`,
 
   // User endpoints
-  USER_QUIZ_RESULTS: "/user/quiz-results",
+  USER_QUIZ_RESULTS: "/user/quiz-results",  
 }

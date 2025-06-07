@@ -33,7 +33,7 @@ export const initializeAuth = async (): Promise<void> => {
   try {
     const token = await AsyncStorage.getItem("auth_token")
     if (token) {
-      console.log("🔑 Setting auth token from storage")
+      //console.log("🔑 Setting auth token from storage")
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`
     }
   } catch (error) {
@@ -54,26 +54,26 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
 
     const response = await api.post(ENDPOINTS.LOGIN, credentials)
 
-    console.log("✅ Login response received:", {
-      status: response.status,
-      data: response.data,
-    })
+    // console.log("✅ Login response received:", {
+    //   status: response.status,
+    //   data: response.data,
+    // })
 
     // Backend trả về: { success: true, message: '...', user: {...}, token: '...' }
     const { user, token, success, message } = response.data
 
     if (!success) {
-      console.error("❌ Login failed:", message)
+      //console.error("❌ Login failed:", message)
       throw new Error(message || "Đăng nhập thất bại")
     }
 
     if (!token) {
-      console.error("❌ No token received")
+      // console.error("❌ No token received")
       throw new Error("Không nhận được token từ server")
     }
 
     if (!user) {
-      console.error("❌ No user data received")
+      //console.error("❌ No user data received")
       throw new Error("Không nhận được thông tin người dùng")
     }
 

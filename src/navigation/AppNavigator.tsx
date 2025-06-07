@@ -20,6 +20,8 @@ import ProfileScreen from "../screens/ProfileScreen"
 import WordListScreen from "../screens/WordListScreen"
 import WordDetailScreen from "../screens/WordDetailScreen"
 import QuizDetailScreen from "../screens/QuizDetailScreen"
+import TestScreen  from "../screens/TestScreen"
+import TestDetailScreen from "../screens/TestDetailScreen"
 
 // Create navigation stacks/tabs
 const AuthStack = createStackNavigator()
@@ -29,6 +31,7 @@ const LessonStack = createStackNavigator()
 const QuizStack = createStackNavigator()
 const ProfileStack = createStackNavigator()
 const WordStack = createStackNavigator()
+const TestStack = createStackNavigator()
 
 // Auth Stack Navigator (Login, Register, ForgotPassword)
 const AuthStackNavigator = () => {
@@ -45,7 +48,7 @@ const AuthStackNavigator = () => {
 const HomeStackNavigator = () => {
   return (
     <HomeStack.Navigator>
-      <HomeStack.Screen name="Home" component={HomeScreen} options={{ title: "Dashboard" }} />
+      <HomeStack.Screen name="Home" component={HomeScreen} options={{ title: "Home" }} />
     </HomeStack.Navigator>
   )
 }
@@ -69,7 +72,14 @@ const QuizStackNavigator = () => {
     </QuizStack.Navigator>
   )
 }
-
+const TestStackNavigator = () => {
+  return (
+    <TestStack.Navigator>
+      <TestStack.Screen name="Tests" component={TestScreen} options={{ title: "Tests" }} />
+      <TestStack.Screen name="TestDetail" component={TestDetailScreen} options={{ title: "Test" }} />
+    </TestStack.Navigator>
+  )
+}
 // Profile stack navigator
 const ProfileStackNavigator = () => {
   return (
@@ -102,6 +112,8 @@ const MainTabNavigator = () => {
           } else if (route.name === "LessonsTab") {
             iconText = "📚"
           } else if (route.name === "WordsTab") {
+            iconText = "📝"
+          } else if (route.name === "TestsTab") {
             iconText = "📝"
           } else if (route.name === "QuizzesTab") {
             iconText = "✏️"
@@ -137,6 +149,14 @@ const MainTabNavigator = () => {
         options={{
           headerShown: false,
           title: "Words",
+        }}
+      />
+      <Tab.Screen
+        name="TestsTab"
+        component={TestStackNavigator}
+        options={{
+          headerShown: false,
+          title: "Test",
         }}
       />
       <Tab.Screen
