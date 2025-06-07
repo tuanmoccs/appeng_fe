@@ -123,7 +123,7 @@ const ProfileScreen = () => {
       <View style={styles.profileHeader}>
         <View style={styles.avatarContainer}>
           <Image
-            source={user?.avatar ? { uri: user.avatar } : require("../assets/images/th (2).jpg")}
+            source={user?.avatar ? { uri: user.avatar } : require("../assets/images/th.jpg")}
             style={styles.avatar}
           />
           <TouchableOpacity style={styles.editAvatarButton}>

@@ -29,9 +29,9 @@ const HomeScreen = ({ navigation }: any) => {
 
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour < 12) return "Chào buổi sáng"
-    if (hour < 18) return "Chào buổi chiều"
-    return "Chào buổi tối"
+    if (hour < 12) return "Good Morning"
+    if (hour < 18) return "Good Afternoon"
+    return "Good Evening"
   }
 
   return (
@@ -42,11 +42,11 @@ const HomeScreen = ({ navigation }: any) => {
           <View style={styles.greetingSection}>
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.userName}>{user?.name}! 👋</Text>
-            <Text style={styles.subtitle}>Hôm nay bạn muốn học gì?</Text>
+            <Text style={styles.subtitle}>What do you want to learn today?</Text>
           </View>
           <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate("ProfileTab")}>
             <Image
-              source={user?.avatar ? { uri: user.avatar } : require("../assets/images/th (2).jpg")}
+              source={user?.avatar ? { uri: user.avatar } : require("../assets/images/th.jpg")}
               style={styles.avatar}
             />
           </TouchableOpacity>
@@ -56,14 +56,14 @@ const HomeScreen = ({ navigation }: any) => {
       {/* Quick Stats */}
       {stats && (
         <View style={styles.quickStats}>
-          <Text style={styles.sectionTitle}>📊 Tiến độ hôm nay</Text>
+          <Text style={styles.sectionTitle}>📊 Today's progress</Text>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <StatCard title="Streak" value={`${stats.current_streak} ngày`} icon="🔥" color={COLORS.WARNING} />
+              <StatCard title="Streak" value={`${stats.current_streak} days`} icon="🔥" color={COLORS.WARNING} />
             </View>
             <View style={styles.statItem}>
               <StatCard
-                title="Quiz hoàn thành"
+                title="Completed Quizz"
                 value={stats.total_quizzes_completed}
                 icon="✅"
                 color={COLORS.SUCCESS}
@@ -75,7 +75,7 @@ const HomeScreen = ({ navigation }: any) => {
 
       {/* Main Actions */}
       <View style={styles.mainActions}>
-        <Text style={styles.sectionTitle}>🚀 Bắt đầu học</Text>
+        <Text style={styles.sectionTitle}>🚀 Start</Text>
 
         <TouchableOpacity style={styles.primaryCard} onPress={() => navigation.navigate("LessonsTab")}>
           <View style={styles.cardContent}>
@@ -83,8 +83,8 @@ const HomeScreen = ({ navigation }: any) => {
               <Text style={styles.cardIconText}>📚</Text>
             </View>
             <View style={styles.cardInfo}>
-              <Text style={styles.cardTitle}>Bài học mới</Text>
-              <Text style={styles.cardDescription}>Khám phá các bài học được cấu trúc từ cơ bản đến nâng cao</Text>
+              <Text style={styles.cardTitle}>New Lesson</Text>
+              <Text style={styles.cardDescription}>Explore structured lessons from beginner to advanced</Text>
             </View>
             <View style={styles.cardArrow}>
               <Text style={styles.arrowText}>→</Text>
@@ -97,29 +97,29 @@ const HomeScreen = ({ navigation }: any) => {
             <View style={styles.secondaryCardIcon}>
               <Text style={styles.secondaryCardIconText}>📝</Text>
             </View>
-            <Text style={styles.secondaryCardTitle}>Từ vựng</Text>
-            <Text style={styles.secondaryCardDescription}>Học từ mới với hình ảnh và ví dụ</Text>
+            <Text style={styles.secondaryCardTitle}>Vocabulary</Text>
+            <Text style={styles.secondaryCardDescription}>Learn new words with pictures and examples</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryCard} onPress={() => navigation.navigate("QuizzesTab")}>
             <View style={styles.secondaryCardIcon}>
               <Text style={styles.secondaryCardIconText}>🧠</Text>
             </View>
-            <Text style={styles.secondaryCardTitle}>Kiểm tra</Text>
-            <Text style={styles.secondaryCardDescription}>Thử thách bản thân với các quiz</Text>
+            <Text style={styles.secondaryCardTitle}>Test</Text>
+            <Text style={styles.secondaryCardDescription}>Challenge yourself with quizzes</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Learning Tips */}
       <View style={styles.tipsSection}>
-        <Text style={styles.sectionTitle}>💡 Mẹo học tập</Text>
+        <Text style={styles.sectionTitle}>💡 Hint</Text>
         <View style={styles.tipCard}>
           <Text style={styles.tipIcon}>🎯</Text>
           <View style={styles.tipContent}>
-            <Text style={styles.tipTitle}>Học đều đặn mỗi ngày</Text>
+            <Text style={styles.tipTitle}>Study regularly every day</Text>
             <Text style={styles.tipDescription}>
-              Chỉ cần 15-20 phút mỗi ngày để duy trì và cải thiện kỹ năng ngôn ngữ của bạn
+              Just 15-20 minutes a day to maintain and improve your language skills
             </Text>
           </View>
         </View>

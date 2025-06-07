@@ -67,13 +67,13 @@ export const checkAuthStatus = createAsyncThunk("auth/checkAuthStatus", async (_
     const isAuthenticated = await authService.checkAuth()
     if (isAuthenticated) {
       const user = await authService.getCurrentUser()
-      console.log("✅ User authenticated:", user)
+      //console.log("✅ User authenticated:", user)
       return { user, isAuthenticated: true }
     }
-    console.log("❌ User not authenticated")
+    //console.log("❌ User not authenticated")
     return { user: null, isAuthenticated: false }
   } catch (error: any) {
-    console.error("❌ Auth status check failed:", error)
+    //console.error("❌ Auth status check failed:", error)
     return { user: null, isAuthenticated: false }
   }
 })

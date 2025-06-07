@@ -101,7 +101,7 @@ const LoginScreen = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('../assets/images/th (2).jpg')}
+            source={require('../assets/images/th.jpg')}
             style={styles.logo}
             resizeMode="contain"
           />
