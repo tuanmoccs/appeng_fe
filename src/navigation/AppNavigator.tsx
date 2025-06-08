@@ -1,8 +1,7 @@
-import { useEffect } from "react"
-import { NavigationContainer } from "@react-navigation/native"
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
-import { createStackNavigator } from "@react-navigation/stack"
-import { Text, ActivityIndicator, View } from "react-native"
+import { useEffect, useState } from "react"
+import { NavigationContainer, useNavigation } from "@react-navigation/native"
+import { createStackNavigator, StackNavigationProp } from "@react-navigation/stack"
+import { Text, ActivityIndicator, View, Modal, TouchableOpacity, Dimensions } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { COLORS } from "../constants/colors"
 import { checkAuthStatus } from "../store/slices/authSlice"
@@ -20,20 +19,38 @@ import ProfileScreen from "../screens/ProfileScreen"
 import WordListScreen from "../screens/WordListScreen"
 import WordDetailScreen from "../screens/WordDetailScreen"
 import QuizDetailScreen from "../screens/QuizDetailScreen"
-import TestScreen  from "../screens/TestScreen"
+import TestScreen from "../screens/TestScreen"
 import TestDetailScreen from "../screens/TestDetailScreen"
 
-// Create navigation stacks/tabs
-const AuthStack = createStackNavigator()
-const Tab = createBottomTabNavigator()
-const HomeStack = createStackNavigator()
-const LessonStack = createStackNavigator()
-const QuizStack = createStackNavigator()
-const ProfileStack = createStackNavigator()
-const WordStack = createStackNavigator()
-const TestStack = createStackNavigator()
+const { width } = Dimensions.get('window')
 
-// Auth Stack Navigator (Login, Register, ForgotPassword)
+// Define navigation types
+type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  ForgotPassword: undefined;
+}
+
+type MainStackParamList = {
+  Home: undefined;
+  Lessons: undefined;
+  LessonDetail: { lessonId?: string };
+  Words: undefined;
+  WordDetail: { wordId?: string };
+  Tests: undefined;
+  TestDetail: { testId?: string };
+  Quizzes: undefined;
+  QuizDetail: { quizId?: string };
+  Profile: undefined;
+}
+
+type MainStackNavigationProp = StackNavigationProp<MainStackParamList>
+
+// Create navigation stacks
+const AuthStack = createStackNavigator<AuthStackParamList>()
+const MainStack = createStackNavigator<MainStackParamList>()
+
+// Auth Stack Navigator
 const AuthStackNavigator = () => {
   return (
     <AuthStack.Navigator screenOptions={{ headerShown: false }}>
@@ -44,147 +61,226 @@ const AuthStackNavigator = () => {
   )
 }
 
-// Home stack navigator
-const HomeStackNavigator = () => {
-  return (
-    <HomeStack.Navigator>
-      <HomeStack.Screen name="Home" component={HomeScreen} options={{ title: "Home" }} />
-    </HomeStack.Navigator>
-  )
+// Define types for MenuModal props
+interface MenuModalProps {
+  visible: boolean;
+  onClose: () => void;
 }
 
-// Lesson stack navigator
-const LessonStackNavigator = () => {
-  return (
-    <LessonStack.Navigator>
-      <LessonStack.Screen name="Lessons" component={LessonScreen} options={{ title: "Lessons" }} />
-      <LessonStack.Screen name="LessonDetail" component={LessonDetailScreen} options={{ headerShown: false }} />
-    </LessonStack.Navigator>
-  )
-}
+// Custom Menu Modal
+const MenuModal = ({ visible, onClose }: MenuModalProps) => {
+  const navigation = useNavigation<any>()
+  
+  const menuItems: Array<{
+    name: string;
+    title: string;
+    screen: keyof MainStackParamList;
+  }> = [
+    { name: "Home", title: "🏠 Home", screen: "Home" },
+    { name: "Lessons", title: "📚 Lessons", screen: "Lessons" },
+    { name: "Words", title: "📝 Vocabulary", screen: "Words" },
+    { name: "Tests", title: "📄 Tests", screen: "Tests" },
+    { name: "Quizzes", title: "✏️ Quizzes", screen: "Quizzes" },
+    { name: "Profile", title: "👤 Profile", screen: "Profile" },
+  ]
 
-// Quiz stack navigator
-const QuizStackNavigator = () => {
-  return (
-    <QuizStack.Navigator>
-      <QuizStack.Screen name="Quizzes" component={QuizScreen} options={{ title: "Quizzes" }} />
-      <QuizStack.Screen name="QuizDetail" component={QuizDetailScreen} options={{ title: "Quiz" }} />
-    </QuizStack.Navigator>
-  )
-}
-const TestStackNavigator = () => {
-  return (
-    <TestStack.Navigator>
-      <TestStack.Screen name="Tests" component={TestScreen} options={{ title: "Tests" }} />
-      <TestStack.Screen name="TestDetail" component={TestDetailScreen} options={{ title: "Test" }} />
-    </TestStack.Navigator>
-  )
-}
-// Profile stack navigator
-const ProfileStackNavigator = () => {
-  return (
-    <ProfileStack.Navigator>
-      <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ title: "My Profile" }} />
-    </ProfileStack.Navigator>
-  )
-}
+  const handleNavigate = (screen: keyof MainStackParamList) => {
+    navigation.navigate(screen as any)
+    onClose()
+  }
 
-// Word stack navigator
-const WordStackNavigator = () => {
   return (
-    <WordStack.Navigator>
-      <WordStack.Screen name="Words" component={WordListScreen} options={{ title: "Vocabulary" }} />
-      <WordStack.Screen name="WordDetail" component={WordDetailScreen} options={{ title: "Word Details" }} />
-    </WordStack.Navigator>
-  )
-}
-
-// Main Tab Navigator (Protected Routes)
-const MainTabNavigator = () => {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconText
-
-          if (route.name === "HomeTab") {
-            iconText = "🏠"
-          } else if (route.name === "LessonsTab") {
-            iconText = "📚"
-          } else if (route.name === "WordsTab") {
-            iconText = "📝"
-          } else if (route.name === "TestsTab") {
-            iconText = "📝"
-          } else if (route.name === "QuizzesTab") {
-            iconText = "✏️"
-          } else if (route.name === "ProfileTab") {
-            iconText = "👤"
-          }
-
-          return <Text style={{ fontSize: size }}>{iconText}</Text>
-        },
-        tabBarActiveTintColor: COLORS.PRIMARY,
-        tabBarInactiveTintColor: COLORS.TEXT_TERTIARY,
-      })}
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
     >
-      <Tab.Screen
-        name="HomeTab"
-        component={HomeStackNavigator}
-        options={{
-          headerShown: false,
-          title: "Home",
+      <TouchableOpacity 
+        style={{ 
+          flex: 1, 
+          backgroundColor: 'rgba(0,0,0,0.5)' 
         }}
-      />
-      <Tab.Screen
-        name="LessonsTab"
-        component={LessonStackNavigator}
-        options={{
-          headerShown: false,
-          title: "Lessons",
-        }}
-      />
-      <Tab.Screen
-        name="WordsTab"
-        component={WordStackNavigator}
-        options={{
-          headerShown: false,
-          title: "Words",
-        }}
-      />
-      <Tab.Screen
-        name="TestsTab"
-        component={TestStackNavigator}
-        options={{
-          headerShown: false,
-          title: "Test",
-        }}
-      />
-      <Tab.Screen
-        name="QuizzesTab"
-        component={QuizStackNavigator}
-        options={{
-          headerShown: false,
-          title: "Quizzes",
-        }}
-      />
-      <Tab.Screen
-        name="ProfileTab"
-        component={ProfileStackNavigator}
-        options={{
-          headerShown: false,
-          title: "Profile",
-        }}
-      />
-    </Tab.Navigator>
+        onPress={onClose}
+      >
+        <View style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: width * 0.75,
+          backgroundColor: COLORS.BACKGROUND,
+          paddingTop: 60,
+          elevation: 5,
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 0 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+        }}>
+          <View style={{ 
+            padding: 20, 
+            borderBottomWidth: 1, 
+            borderBottomColor: COLORS.BORDER || '#e0e0e0',
+            marginBottom: 10
+          }}>
+            <Text style={{ 
+              fontSize: 20, 
+              fontWeight: 'bold', 
+              color: COLORS.TEXT_PRIMARY 
+            }}>
+              Menu
+            </Text>
+          </View>
+          
+          {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={{
+                paddingVertical: 15,
+                paddingHorizontal: 20,
+                borderBottomWidth: 0.5,
+                borderBottomColor: COLORS.BORDER || '#f0f0f0'
+              }}
+              onPress={() => handleNavigate(item.screen)}
+            >
+              <Text style={{ 
+                fontSize: 16, 
+                color: COLORS.TEXT_PRIMARY,
+                fontWeight: '500'
+              }}>
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
+    </Modal>
   )
+}
+
+// Wrapper component để có thể sử dụng navigation trong MainStackNavigator
+const MainStackScreen = () => {
+  const [menuVisible, setMenuVisible] = useState(false)
+
+  const HamburgerButton = () => (
+    <TouchableOpacity
+      style={{ 
+        marginLeft: 15,
+        padding: 5
+      }}
+      onPress={() => setMenuVisible(true)}
+    >
+      <Text style={{ 
+        fontSize: 24, 
+        color: COLORS.PRIMARY 
+      }}>
+        ☰
+      </Text>
+    </TouchableOpacity>
+  )
+
+  return (
+    <>
+      <MainStack.Navigator>
+        <MainStack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{
+            title: "Home",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="Lessons" 
+          component={LessonScreen} 
+          options={{
+            title: "Lessons",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="LessonDetail" 
+          component={LessonDetailScreen} 
+          options={{ headerShown: false }} 
+        />
+        <MainStack.Screen 
+          name="Words" 
+          component={WordListScreen} 
+          options={{
+            title: "Vocabulary",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="WordDetail" 
+          component={WordDetailScreen} 
+          options={{ title: "Word Details" }} 
+        />
+        <MainStack.Screen 
+          name="Tests" 
+          component={TestScreen} 
+          options={{
+            title: "Tests",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="TestDetail" 
+          component={TestDetailScreen} 
+          options={{ title: "Test" }} 
+        />
+        <MainStack.Screen 
+          name="Quizzes" 
+          component={QuizScreen} 
+          options={{
+            title: "Quizzes",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="QuizDetail" 
+          component={QuizDetailScreen} 
+          options={{ title: "Quiz" }} 
+        />
+        <MainStack.Screen 
+          name="Profile" 
+          component={ProfileScreen} 
+          options={{
+            title: "My Profile",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+      </MainStack.Navigator>
+
+      <MenuModal
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+      />
+    </>
+  )
+}
+
+// Main Stack Navigator với navigation
+const MainStackNavigator = () => {
+  return <MainStackScreen />
 }
 
 // Loading Screen Component
 const LoadingScreen = () => {
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: COLORS.BACKGROUND }}>
+    <View style={{ 
+      flex: 1, 
+      justifyContent: "center", 
+      alignItems: "center", 
+      backgroundColor: COLORS.BACKGROUND 
+    }}>
       <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-      <Text style={{ marginTop: 16, color: COLORS.TEXT_PRIMARY }}>Đang kiểm tra đăng nhập...</Text>
+      <Text style={{ 
+        marginTop: 16, 
+        color: COLORS.TEXT_PRIMARY 
+      }}>
+        Đang kiểm tra đăng nhập...
+      </Text>
     </View>
   )
 }
@@ -195,16 +291,18 @@ const AppNavigator = () => {
   const { isAuthenticated, isLoading, isInitialized } = useSelector((state: RootState) => state.auth)
 
   useEffect(() => {
-    // Check authentication status when app starts
     dispatch(checkAuthStatus())
   }, [dispatch])
 
-  // Show loading screen while checking auth status
   if (!isInitialized || isLoading) {
     return <LoadingScreen />
   }
 
-  return <NavigationContainer>{isAuthenticated ? <MainTabNavigator /> : <AuthStackNavigator />}</NavigationContainer>
+  return (
+    <NavigationContainer>
+      {isAuthenticated ? <MainStackNavigator /> : <AuthStackNavigator />}
+    </NavigationContainer>
+  )
 }
 
 export default AppNavigator
