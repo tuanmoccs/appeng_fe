@@ -77,7 +77,7 @@ const HomeScreen = ({ navigation }: any) => {
       <View style={styles.mainActions}>
         <Text style={styles.sectionTitle}>🚀 Start</Text>
 
-        <TouchableOpacity style={styles.primaryCard} onPress={() => navigation.navigate("LessonsTab")}>
+        <TouchableOpacity style={styles.primaryCard} onPress={() => navigation.navigate("Lessons")}>
           <View style={styles.cardContent}>
             <View style={styles.cardIcon}>
               <Text style={styles.cardIconText}>📚</Text>
@@ -93,7 +93,7 @@ const HomeScreen = ({ navigation }: any) => {
         </TouchableOpacity>
 
         <View style={styles.secondaryCards}>
-          <TouchableOpacity style={styles.secondaryCard} onPress={() => navigation.navigate("WordsTab")}>
+          <TouchableOpacity style={styles.secondaryCard} onPress={() => navigation.navigate("Words")}>
             <View style={styles.secondaryCardIcon}>
               <Text style={styles.secondaryCardIconText}>📝</Text>
             </View>
@@ -101,7 +101,7 @@ const HomeScreen = ({ navigation }: any) => {
             <Text style={styles.secondaryCardDescription}>Learn new words with pictures and examples</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryCard} onPress={() => navigation.navigate("QuizzesTab")}>
+          <TouchableOpacity style={styles.secondaryCard} onPress={() => navigation.navigate("Tests")}>
             <View style={styles.secondaryCardIcon}>
               <Text style={styles.secondaryCardIconText}>🧠</Text>
             </View>
