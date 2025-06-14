@@ -21,6 +21,8 @@ import WordDetailScreen from "../screens/WordDetailScreen"
 import QuizDetailScreen from "../screens/QuizDetailScreen"
 import TestScreen from "../screens/TestScreen"
 import TestDetailScreen from "../screens/TestDetailScreen"
+import ListeningScreen from "../screens/ListeningScreen"
+import ListeningDetailScreen from "../screens/ListeningDetailScreen"
 
 const { width } = Dimensions.get('window')
 
@@ -39,6 +41,8 @@ type MainStackParamList = {
   WordDetail: { wordId?: string };
   Tests: undefined;
   TestDetail: { testId?: string };
+  Listenings: undefined;
+  ListeningDetail: { listeningId?: string };
   Quizzes: undefined;
   QuizDetail: { quizId?: string };
   Profile: undefined;
@@ -80,6 +84,7 @@ const MenuModal = ({ visible, onClose }: MenuModalProps) => {
     { name: "Lessons", title: "📚 Lessons", screen: "Lessons" },
     { name: "Words", title: "📝 Vocabulary", screen: "Words" },
     { name: "Tests", title: "📄 Tests", screen: "Tests" },
+    { name: "Listenings", title: "🎧 Listening Tests", screen: "Listenings" },
     { name: "Quizzes", title: "✏️ Quizzes", screen: "Quizzes" },
     { name: "Profile", title: "👤 Profile", screen: "Profile" },
   ]
@@ -228,6 +233,19 @@ const MainStackScreen = () => {
           name="TestDetail" 
           component={TestDetailScreen} 
           options={{ title: "Test" }} 
+        />
+        <MainStack.Screen 
+          name="Listenings" 
+          component={ListeningScreen} 
+          options={{
+            title: "Listenings",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="ListeningDetail" 
+          component={ListeningDetailScreen} 
+          options={{ title: "Listening Detail" }} 
         />
         <MainStack.Screen 
           name="Quizzes" 
