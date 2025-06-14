@@ -1,4 +1,3 @@
-// src/screens/RegisterScreen.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -11,6 +10,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS } from '../constants/colors';
@@ -64,16 +65,16 @@ const RegisterScreen = ({ navigation }: any) => {
     };
 
     // Kiểm tra tên
-    if (!formData.name) {
+    if (!formData.name.trim()) {
       newErrors.name = 'Vui lòng nhập tên của bạn';
       isValid = false;
     }
 
     // Kiểm tra email
-    if (!formData.email) {
+    if (!formData.email.trim()) {
       newErrors.email = 'Vui lòng nhập email';
       isValid = false;
-    } else if (!validateEmail(formData.email)) {
+    } else if (!validateEmail(formData.email.trim())) {
       newErrors.email = 'Email không hợp lệ';
       isValid = false;
     }
@@ -101,100 +102,138 @@ const RegisterScreen = ({ navigation }: any) => {
   };
 
   const handleRegister = () => {
+    // Đóng keyboard trước khi validate
+    Keyboard.dismiss();
+    
+    // Luôn validate form khi bấm đăng ký
     if (validateForm()) {
-      dispatch(register(formData));
+      dispatch(register({
+        ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+      }));
     }
   };
 
   const handleLogin = () => {
+    // Đóng keyboard và chuyển màn hình
+    Keyboard.dismiss();
     navigation.navigate('Login');
   };
 
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+  };
+
+  const handleInputChange = (field: keyof RegisterData, value: string) => {
+    setFormData({ ...formData, [field]: value });
+    
+    // Xóa lỗi khi người dùng bắt đầu nhập
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: '' });
+    }
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Đăng ký tài khoản</Text>
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Đăng ký tài khoản</Text>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Họ tên</Text>
-            <TextInput
-              style={[styles.input, errors.name ? styles.inputError : null]}
-              placeholder="Nhập họ tên của bạn"
-              placeholderTextColor={COLORS.TEXT_SECONDARY}
-              value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
-            />
-            {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Họ tên</Text>
+              <TextInput
+                style={[styles.input, errors.name ? styles.inputError : null]}
+                placeholder="Nhập họ tên của bạn"
+                placeholderTextColor={COLORS.TEXT_SECONDARY}
+                value={formData.name}
+                onChangeText={(text) => handleInputChange('name', text)}
+                returnKeyType="next"
+                blurOnSubmit={false}
+              />
+              {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={[styles.input, errors.email ? styles.inputError : null]}
-              placeholder="Nhập email của bạn"
-              placeholderTextColor={COLORS.TEXT_SECONDARY}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={formData.email}
-              onChangeText={(text) => setFormData({ ...formData, email: text })}
-            />
-            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={[styles.input, errors.email ? styles.inputError : null]}
+                placeholder="Nhập email của bạn"
+                placeholderTextColor={COLORS.TEXT_SECONDARY}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={formData.email}
+                onChangeText={(text) => handleInputChange('email', text)}
+                returnKeyType="next"
+                blurOnSubmit={false}
+              />
+              {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Mật khẩu</Text>
-            <TextInput
-              style={[styles.input, errors.password ? styles.inputError : null]}
-              placeholder="Nhập mật khẩu của bạn"
-              placeholderTextColor={COLORS.TEXT_SECONDARY}
-              secureTextEntry
-              value={formData.password}
-              onChangeText={(text) => setFormData({ ...formData, password: text })}
-            />
-            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Mật khẩu</Text>
+              <TextInput
+                style={[styles.input, errors.password ? styles.inputError : null]}
+                placeholder="Nhập mật khẩu của bạn"
+                placeholderTextColor={COLORS.TEXT_SECONDARY}
+                secureTextEntry
+                value={formData.password}
+                onChangeText={(text) => handleInputChange('password', text)}
+                returnKeyType="next"
+                blurOnSubmit={false}
+              />
+              {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+            </View>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Xác nhận mật khẩu</Text>
-            <TextInput
-              style={[styles.input, errors.password_confirmation ? styles.inputError : null]}
-              placeholder="Nhập lại mật khẩu của bạn"
-              placeholderTextColor={COLORS.TEXT_SECONDARY}
-              secureTextEntry
-              value={formData.password_confirmation}
-              onChangeText={(text) => setFormData({ ...formData, password_confirmation: text })}
-            />
-            {errors.password_confirmation ? (
-              <Text style={styles.errorText}>{errors.password_confirmation}</Text>
-            ) : null}
-          </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Xác nhận mật khẩu</Text>
+              <TextInput
+                style={[styles.input, errors.password_confirmation ? styles.inputError : null]}
+                placeholder="Nhập lại mật khẩu của bạn"
+                placeholderTextColor={COLORS.TEXT_SECONDARY}
+                secureTextEntry
+                value={formData.password_confirmation}
+                onChangeText={(text) => handleInputChange('password_confirmation', text)}
+                returnKeyType="done"
+                onSubmitEditing={handleRegister}
+              />
+              {errors.password_confirmation ? (
+                <Text style={styles.errorText}>{errors.password_confirmation}</Text>
+              ) : null}
+            </View>
 
-          <TouchableOpacity
-            style={[styles.button, styles.registerButton]}
-            onPress={handleRegister}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color={COLORS.WHITE} />
-            ) : (
-              <Text style={styles.buttonText}>Đăng ký</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Đã có tài khoản? </Text>
-            <TouchableOpacity onPress={handleLogin}>
-              <Text style={styles.loginLink}>Đăng nhập</Text>
+            <TouchableOpacity
+              style={[styles.button, styles.registerButton]}
+              onPress={handleRegister}
+              disabled={isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={COLORS.WHITE} />
+              ) : (
+                <Text style={styles.buttonText}>Đăng ký</Text>
+              )}
             </TouchableOpacity>
+
+            <View style={styles.loginContainer}>
+              <Text style={styles.loginText}>Đã có tài khoản? </Text>
+              <TouchableOpacity onPress={handleLogin} activeOpacity={0.8}>
+                <Text style={styles.loginLink}>Đăng nhập</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
