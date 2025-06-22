@@ -1,24 +1,19 @@
-"use client"
-
 import { useEffect, useState, useRef } from "react"
 import {
   View,
   Text,
-  StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
   BackHandler,
   ScrollView,
+  StyleSheet,
 } from "react-native"
-import Sound from "react-native-sound"
+import AudioRecorderPlayer from 'react-native-audio-recorder-player'
 import { COLORS } from "../constants/colors"
 import ListeningQuestion from "../components/ListeningQuestion"
 import { getListeningTestById, submitListeningTest } from "../services/listeningtestService"
 import type { ListeningTest, ListeningAnswer, ListeningResult } from "../services/listeningtestService"
-
-// Enable playback in silence mode
-Sound.setCategory("Playback")
 
 const ListeningDetailScreen = ({ route, navigation }: any) => {
   const { testId } = route.params
@@ -26,26 +21,23 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
   const [test, setTest] = useState<ListeningTest | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({})
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [testResult, setTestResult] = useState<ListeningResult | null>(null)
   const [showResult, setShowResult] = useState(false)
-  const [sound, setSound] = useState<Sound | null>(null)
+  const [audioLoading, setAudioLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [audioPosition, setAudioPosition] = useState(0)
-  const [audioDuration, setAudioDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [startTime] = useState(Date.now())
 
-  const audioRef = useRef<Sound | null>(null)
-  const positionInterval = useRef<NodeJS.Timeout | null>(null)
+  // Audio player instance
+  const audioRecorderPlayer = useRef(new AudioRecorderPlayer()).current
 
   useEffect(() => {
-    fetchTest()
-
-    // Handle hardware back button
     const backHandler = BackHandler.addEventListener("hardwareBackPress", handleBackPress)
+
     return () => {
       backHandler.remove()
       cleanup()
@@ -53,9 +45,13 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
   }, [])
 
   useEffect(() => {
+    fetchTest()
+  }, [])
+
+  useEffect(() => {
     // Setup timer if test has time limit
     if (test?.time_limit && timeRemaining === null && !showResult) {
-      setTimeRemaining(test.time_limit * 60) // Convert minutes to seconds
+      setTimeRemaining(test.time_limit * 60)
     }
   }, [test])
 
@@ -85,22 +81,15 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
     if (test?.sections && test.sections[currentSectionIndex]) {
       loadAudio()
     }
-
-    return () => {
-      // Cleanup audio when component unmounts or section changes
-      cleanup()
-    }
   }, [currentSectionIndex, test])
 
-  const cleanup = () => {
-    if (positionInterval.current) {
-      clearInterval(positionInterval.current)
-      positionInterval.current = null
-    }
-    if (audioRef.current) {
-      audioRef.current.stop()
-      audioRef.current.release()
-      audioRef.current = null
+  const cleanup = async () => {
+    try {
+      await audioRecorderPlayer.stopPlayer()
+      audioRecorderPlayer.removePlayBackListener()
+      console.log('🧹 Audio player cleaned up')
+    } catch (error) {
+      console.error('Error cleaning up audio player:', error)
     }
   }
 
@@ -109,7 +98,6 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
       setLoading(true)
       const testData = await getListeningTestById(testId)
 
-      // Validate test data
       if (!testData || !testData.sections || testData.sections.length === 0) {
         throw new Error("Listening test không có section hoặc dữ liệu không hợp lệ")
       }
@@ -133,54 +121,57 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
 
   const loadAudio = async () => {
     try {
-      // Cleanup previous audio
-      cleanup()
+      setAudioLoading(true)
+      setIsPlaying(false)
+      setCurrentTime(0)
+      setDuration(0)
 
       const currentSection = test?.sections[currentSectionIndex]
       if (!currentSection?.audio_url) {
         console.log("No audio URL for current section")
+        setAudioLoading(false)
         return
       }
 
-      console.log("Loading audio:", currentSection.audio_url)
+      console.log("🎵 Loading audio from URL:", currentSection.audio_url)
 
-      const newSound = new Sound(currentSection.audio_url, Sound.MAIN_BUNDLE, (error: any) => {
-        if (error) {
-          console.error("Failed to load the sound", error)
-          Alert.alert("Lỗi", "Không thể tải file âm thanh")
-          return
-        }
-
-        // Audio loaded successfully
-        console.log("Audio loaded successfully")
-        setAudioDuration(newSound.getDuration() * 1000) // Convert to milliseconds
-        audioRef.current = newSound
-        setSound(newSound)
-      })
-    } catch (error) {
-      console.error("Error loading audio:", error)
-      Alert.alert("Lỗi", "Không thể tải file âm thanh")
-    }
-  }
-
-  const startPositionTracking = () => {
-    if (positionInterval.current) {
-      clearInterval(positionInterval.current)
-    }
-
-    positionInterval.current = setInterval(() => {
-      if (audioRef.current && isPlaying) {
-        audioRef.current.getCurrentTime((seconds: number) => {
-          setAudioPosition(seconds * 1000) // Convert to milliseconds
-        })
+      // Validate URL format
+      if (!currentSection.audio_url.startsWith('http://') && !currentSection.audio_url.startsWith('https://')) {
+        console.error("Invalid audio URL format:", currentSection.audio_url)
+        Alert.alert("Lỗi Audio", "URL audio không hợp lệ")
+        setAudioLoading(false)
+        return
       }
-    }, 100)
-  }
 
-  const stopPositionTracking = () => {
-    if (positionInterval.current) {
-      clearInterval(positionInterval.current)
-      positionInterval.current = null
+      // Stop current playback
+      await audioRecorderPlayer.stopPlayer()
+      audioRecorderPlayer.removePlayBackListener()
+
+      // Set up playback listener
+      audioRecorderPlayer.addPlayBackListener((e) => {
+        setCurrentTime(e.currentPosition)
+        setDuration(e.duration)
+        
+        // Check if playback finished
+        if (e.currentPosition >= e.duration && e.duration > 0) {
+          setIsPlaying(false)
+        }
+      })
+
+      console.log("✅ Audio loaded successfully")
+      setAudioLoading(false)
+    } catch (error: any) {
+      console.error("❌ Error loading audio:", error)
+      setAudioLoading(false)
+
+      let errorMessage = "Không thể tải file âm thanh"
+      if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = "Lỗi kết nối mạng. Kiểm tra internet và thử lại."
+      } else if (error.message?.includes('format') || error.message?.includes('codec')) {
+        errorMessage = "Format file âm thanh không được hỗ trợ"
+      }
+
+      Alert.alert("Lỗi Audio", errorMessage)
     }
   }
 
@@ -204,39 +195,32 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
   }
 
   const handlePlayPause = async () => {
-    if (!audioRef.current) return
-
     try {
+      const currentSection = test?.sections[currentSectionIndex]
+      if (!currentSection?.audio_url) {
+        Alert.alert("Lỗi", "Không có file audio cho section này")
+        return
+      }
+
       if (isPlaying) {
-        audioRef.current.pause()
+        await audioRecorderPlayer.pausePlayer()
         setIsPlaying(false)
-        stopPositionTracking()
+        console.log("⏸️ Audio paused")
       } else {
-        audioRef.current.play((success: boolean) => {
-          if (success) {
-            console.log("Audio played successfully")
-            setIsPlaying(false)
-            stopPositionTracking()
-          } else {
-            console.error("Audio playback failed")
-            Alert.alert("Lỗi", "Không thể phát audio")
-          }
-        })
+        await audioRecorderPlayer.startPlayer(currentSection.audio_url)
         setIsPlaying(true)
-        startPositionTracking()
+        console.log("▶️ Audio playing")
       }
     } catch (error) {
       console.error("Error playing/pausing audio:", error)
+      Alert.alert("Lỗi", "Có lỗi xảy ra khi phát audio")
     }
   }
 
   const handleSeekAudio = async (positionMs: number) => {
-    if (!audioRef.current) return
-
     try {
-      const positionSeconds = positionMs / 1000
-      audioRef.current.setCurrentTime(positionSeconds)
-      setAudioPosition(positionMs)
+      await audioRecorderPlayer.seekToPlayer(positionMs)
+      console.log(`🎯 Seeked to ${positionMs}ms`)
     } catch (error) {
       console.error("Error seeking audio:", error)
     }
@@ -249,39 +233,21 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
     }))
   }
 
-  const handlePreviousQuestion = () => {
-    const currentSection = test?.sections[currentSectionIndex]
-    if (!currentSection) return
-
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1)
-    } else if (currentSectionIndex > 0) {
-      // Go to previous section, last question
-      const prevSection = test?.sections[currentSectionIndex - 1]
-      if (prevSection) {
-        setCurrentSectionIndex(currentSectionIndex - 1)
-        setCurrentQuestionIndex(prevSection.questions.length - 1)
-      }
+  const handlePreviousSection = () => {
+    if (currentSectionIndex > 0) {
+      setCurrentSectionIndex(currentSectionIndex - 1)
     }
   }
 
-  const handleNextQuestion = () => {
-    const currentSection = test?.sections[currentSectionIndex]
-    if (!currentSection) return
-
-    if (currentQuestionIndex < currentSection.questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
-    } else if (currentSectionIndex < (test?.sections.length || 0) - 1) {
-      // Go to next section, first question
+  const handleNextSection = () => {
+    if (currentSectionIndex < (test?.sections.length || 0) - 1) {
       setCurrentSectionIndex(currentSectionIndex + 1)
-      setCurrentQuestionIndex(0)
     }
   }
 
   const handleSubmitTest = async () => {
     if (!test?.sections) return
 
-    // Get all questions from all sections
     const allQuestions = test.sections.flatMap((section) => section.questions)
     const unansweredQuestions = allQuestions.filter((q) => !userAnswers[q.id])
 
@@ -305,10 +271,8 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
       setIsSubmitting(true)
 
       // Stop audio
-      if (audioRef.current) {
-        audioRef.current.stop()
-        stopPositionTracking()
-      }
+      await audioRecorderPlayer.stopPlayer()
+      setIsPlaying(false)
 
       // Convert answers to required format
       const allQuestions = test.sections.flatMap((section) => section.questions)
@@ -341,29 +305,19 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`
   }
 
-  const getCurrentQuestionNumber = () => {
-    if (!test?.sections) return 0
+  const getTotalAnsweredInSection = (sectionIndex: number) => {
+    const section = test?.sections[sectionIndex]
+    if (!section) return 0
 
-    let questionNumber = 0
-    for (let i = 0; i < currentSectionIndex; i++) {
-      questionNumber += test.sections[i].questions.length
-    }
-    questionNumber += currentQuestionIndex + 1
-    return questionNumber
+    return section.questions.filter(q => userAnswers[q.id]).length
   }
 
-  const isLastQuestion = () => {
-    if (!test?.sections) return false
-
-    const isLastSection = currentSectionIndex === test.sections.length - 1
-    const currentSection = test.sections[currentSectionIndex]
-    const isLastQuestionInSection = currentQuestionIndex === currentSection.questions.length - 1
-
-    return isLastSection && isLastQuestionInSection
+  const isLastSection = () => {
+    return currentSectionIndex === (test?.sections.length || 0) - 1
   }
 
-  const isFirstQuestion = () => {
-    return currentSectionIndex === 0 && currentQuestionIndex === 0
+  const isFirstSection = () => {
+    return currentSectionIndex === 0
   }
 
   if (loading) {
@@ -432,19 +386,18 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
   }
 
   const currentSection = test.sections[currentSectionIndex]
-  const currentQuestion = currentSection?.questions[currentQuestionIndex]
 
-  if (!currentSection || !currentQuestion) {
+  if (!currentSection) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-        <Text style={styles.loadingText}>Đang tải câu hỏi...</Text>
+        <Text style={styles.loadingText}>Đang tải section...</Text>
       </View>
     )
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
@@ -464,73 +417,90 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
       {/* Section Info */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          Section {currentSectionIndex + 1}: {currentSection.title}
+          Section {currentSectionIndex + 1}/{test.sections.length}: {currentSection.title}
         </Text>
         {currentSection.instructions && <Text style={styles.sectionInstructions}>{currentSection.instructions}</Text>}
+
+        <Text style={styles.sectionProgress}>
+          Đã trả lời: {getTotalAnsweredInSection(currentSectionIndex)}/{currentSection.questions.length} câu
+        </Text>
       </View>
 
       {/* Audio Player */}
       <View style={styles.audioContainer}>
-        <View style={styles.audioControls}>
-          <TouchableOpacity style={styles.playButton} onPress={handlePlayPause}>
-            <Text style={styles.playButtonText}>{isPlaying ? "⏸️" : "▶️"}</Text>
-          </TouchableOpacity>
-
-          <View style={styles.audioInfo}>
-            <Text style={styles.audioTime}>
-              {formatAudioTime(audioPosition)} / {formatAudioTime(audioDuration)}
-            </Text>
-            <TouchableOpacity
-              style={styles.progressBar}
-              onPress={(e) => {
-                const { locationX } = e.nativeEvent
-                const progressBarWidth = 200 // Approximate width
-                const newPosition = (locationX / progressBarWidth) * audioDuration
-                handleSeekAudio(newPosition)
-              }}
-            >
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${audioDuration > 0 ? (audioPosition / audioDuration) * 100 : 0}%` },
-                ]}
-              />
-            </TouchableOpacity>
+        {audioLoading ? (
+          <View style={styles.audioLoading}>
+            <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+            <Text style={styles.audioLoadingText}>Đang tải audio...</Text>
           </View>
-        </View>
+        ) : currentSection.audio_url ? (
+          <View style={styles.audioControls}>
+            <TouchableOpacity
+              style={styles.playButton}
+              onPress={handlePlayPause}
+            >
+              <Text style={styles.playButtonText}>
+                {isPlaying ? "⏸️" : "▶️"}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.audioInfo}>
+              <Text style={styles.audioTime}>
+                {formatAudioTime(currentTime)} / {formatAudioTime(duration)}
+              </Text>
+              <TouchableOpacity
+                style={styles.progressBar}
+                onPress={(e) => {
+                  if (!duration) return
+                  const { locationX } = e.nativeEvent
+                  const progressBarWidth = 200 // Approximate width
+                  const newPosition = (locationX / progressBarWidth) * duration
+                  handleSeekAudio(newPosition)
+                }}
+              >
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`
+                    },
+                  ]}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <Text style={styles.noAudioText}>Section này không có audio</Text>
+        )}
       </View>
 
-      {/* Progress */}
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>
-          Section {currentSectionIndex + 1}/{test.sections.length} • Câu {getCurrentQuestionNumber()}/
-          {test.total_questions} • {Object.keys(userAnswers).length} đã trả lời
-        </Text>
+      {/* All Questions in Current Section */}
+      <View style={styles.questionsContainer}>
+        {currentSection.questions.map((question, questionIndex) => (
+          <View key={question.id} style={styles.questionWrapper}>
+            <ListeningQuestion
+              question={question.question}
+              options={question.options}
+              selectedOption={userAnswers[question.id]}
+              onSelectOption={(answer) => handleSelectAnswer(question.id, answer)}
+              questionNumber={questionIndex + 1}
+              totalQuestions={currentSection.questions.length}
+            />
+          </View>
+        ))}
       </View>
 
-      {/* Question */}
-      <View style={styles.questionContainer}>
-        <ListeningQuestion
-          question={currentQuestion.question}
-          options={currentQuestion.options}
-          selectedOption={userAnswers[currentQuestion.id]}
-          onSelectOption={(answer) => handleSelectAnswer(currentQuestion.id, answer)}
-          questionNumber={getCurrentQuestionNumber()}
-          totalQuestions={test.total_questions}
-        />
-      </View>
-
-      {/* Navigation */}
+      {/* Section Navigation */}
       <View style={styles.navigationContainer}>
         <TouchableOpacity
-          style={[styles.navButton, styles.prevButton, isFirstQuestion() && styles.disabledButton]}
-          onPress={handlePreviousQuestion}
-          disabled={isFirstQuestion()}
+          style={[styles.navButton, styles.prevButton, isFirstSection() && styles.disabledButton]}
+          onPress={handlePreviousSection}
+          disabled={isFirstSection()}
         >
-          <Text style={[styles.navButtonText, isFirstQuestion() && styles.disabledButtonText]}>← Câu trước</Text>
+          <Text style={[styles.navButtonText, isFirstSection() && styles.disabledButtonText]}>← Section trước</Text>
         </TouchableOpacity>
 
-        {isLastQuestion() ? (
+        {isLastSection() ? (
           <TouchableOpacity
             style={[styles.navButton, styles.submitButton]}
             onPress={handleSubmitTest}
@@ -543,26 +513,25 @@ const ListeningDetailScreen = ({ route, navigation }: any) => {
             )}
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={[styles.navButton, styles.nextButton]} onPress={handleNextQuestion}>
-            <Text style={styles.navButtonText}>Câu sau →</Text>
+          <TouchableOpacity style={[styles.navButton, styles.nextButton]} onPress={handleNextSection}>
+            <Text style={styles.navButtonText}>Section sau →</Text>
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: COLORS.WHITE,
   },
   centerContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.BACKGROUND,
-    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.WHITE,
   },
   loadingText: {
     marginTop: 16,
@@ -572,133 +541,149 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     color: COLORS.ERROR,
-    textAlign: "center",
-    marginBottom: 20,
+    textAlign: 'center',
+    marginBottom: 16,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
     backgroundColor: COLORS.PRIMARY,
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
   },
   backButton: {
-    marginBottom: 12,
+    marginRight: 16,
   },
   backButtonText: {
     color: COLORS.WHITE,
     fontSize: 16,
+    fontWeight: '500',
   },
   headerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flex: 1,
   },
   testTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
     color: COLORS.WHITE,
-    flex: 1,
-    marginRight: 12,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   timer: {
-    fontSize: 18,
-    fontWeight: "bold",
     color: COLORS.WHITE,
+    fontSize: 14,
+    marginTop: 4,
   },
   timerWarning: {
     color: COLORS.WARNING,
+    fontWeight: 'bold',
   },
   sectionHeader: {
-    backgroundColor: COLORS.WHITE,
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
+    backgroundColor: COLORS.GRAY,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
     marginBottom: 8,
   },
   sectionInstructions: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
-    lineHeight: 20,
+    marginBottom: 8,
+  },
+  sectionProgress: {
+    fontSize: 14,
+    color: COLORS.PRIMARY,
+    fontWeight: '500',
   },
   audioContainer: {
     backgroundColor: COLORS.WHITE,
+    margin: 16,
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  audioLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  audioLoadingText: {
+    marginLeft: 8,
+    color: COLORS.TEXT_SECONDARY,
   },
   audioControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   playButton: {
     width: 50,
     height: 50,
     borderRadius: 25,
     backgroundColor: COLORS.PRIMARY,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
   playButtonText: {
     fontSize: 20,
-    color: COLORS.WHITE,
   },
   audioInfo: {
     flex: 1,
   },
   audioTime: {
     fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
+    color: COLORS.TEXT_PRIMARY,
     marginBottom: 8,
   },
   progressBar: {
     height: 4,
-    backgroundColor: COLORS.GRAY,
+    backgroundColor: COLORS.LIGHT_GRAY,
     borderRadius: 2,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   progressFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: COLORS.PRIMARY,
-    borderRadius: 2,
   },
-  progressContainer: {
-    backgroundColor: COLORS.WHITE,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
-  },
-  progressText: {
-    fontSize: 14,
+  noAudioText: {
+    textAlign: 'center',
     color: COLORS.TEXT_SECONDARY,
-    textAlign: "center",
+    fontStyle: 'italic',
   },
-  questionContainer: {
-    flex: 1,
+  questionsContainer: {
+    padding: 16,
+  },
+  questionWrapper: {
+    marginBottom: 24,
     backgroundColor: COLORS.WHITE,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   navigationContainer: {
-    flexDirection: "row",
-    padding: 20,
-    gap: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
     backgroundColor: COLORS.WHITE,
     borderTopWidth: 1,
     borderTopColor: COLORS.BORDER,
   },
   navButton: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
   },
   prevButton: {
-    backgroundColor: COLORS.GRAY,
+    backgroundColor: COLORS.LIGHT_GRAY,
   },
   nextButton: {
     backgroundColor: COLORS.PRIMARY,
@@ -707,22 +692,22 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.SUCCESS,
   },
   disabledButton: {
-    backgroundColor: COLORS.GRAY + "50",
+    backgroundColor: COLORS.ERROR,
   },
   navButtonText: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '500',
     color: COLORS.WHITE,
   },
   disabledButtonText: {
-    color: COLORS.TEXT_TERTIARY,
+    color: COLORS.TEXT_SECONDARY,
   },
   button: {
     backgroundColor: COLORS.PRIMARY,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
   },
   primaryButton: {
     backgroundColor: COLORS.PRIMARY,
@@ -730,49 +715,42 @@ const styles = StyleSheet.create({
   buttonText: {
     color: COLORS.WHITE,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '500',
   },
   resultContainer: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 16,
   },
   resultHeader: {
-    alignItems: "center",
-    marginBottom: 30,
+    alignItems: 'center',
+    marginBottom: 24,
   },
   resultTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   scoreContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
   },
   scoreText: {
-    fontSize: 36,
-    fontWeight: "bold",
+    fontSize: 32,
+    fontWeight: 'bold',
   },
   resultStats: {
     backgroundColor: COLORS.WHITE,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 30,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 24,
+    elevation: 2,
   },
   statItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.BORDER,
   },
@@ -782,11 +760,11 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: COLORS.TEXT_PRIMARY,
   },
   resultActions: {
-    gap: 12,
+    alignItems: 'center',
   },
 })
 

@@ -1,7 +1,7 @@
 // src/constants/apiEndpoints.ts
 // Base API URL - Update to your actual backend URL
-export const API_BASE_URL = "http:10.0.2.2:8000/api" // 10.0.2.2 points to host machine's localhost from Android emulator
-
+export const API_BASE_URL = "https://3076-2402-800-610c-f528-a0fc-3be0-9792-5a44.ngrok-free.app/api" // 10.0.2.2 points to host machine's localhost from Android emulator
+export const API_STORAGE = "https://3076-2402-800-610c-f528-a0fc-3be0-9792-5a44.ngrok-free.app/storage"
 // API endpoints
 export const ENDPOINTS = {
   // Auth endpoints
@@ -40,7 +40,7 @@ export const ENDPOINTS = {
 
   //Listening-test endpoints
   LISTENINGS: "/listening-tests",
-  LISTENING_TEST_DETAIL: (id : number) => `/listening-tests/${id}`,
+  LISTENING_DETAIL: (id: number) => `/listening-tests/${id}`,
   LISTENING_TEST_SUBMIT: (id : number) => `/listening-tests/${id}/submit`,
   LISTENING_TEST_RESULTS: (id : number) => `/listening-tests/${id}/results`,
 

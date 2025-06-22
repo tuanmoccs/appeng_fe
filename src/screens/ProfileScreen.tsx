@@ -13,6 +13,10 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
 } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { COLORS } from "../constants/colors"
@@ -211,42 +215,50 @@ const ProfileScreen = () => {
         animationType="slide"
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Sửa thông tin</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ width: '100%', alignItems: 'center' }}
+            >
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Sửa thông tin</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Tên</Text>
-              <TextInput
-                style={styles.input}
-                value={editName}
-                onChangeText={setEditName}
-                placeholder="Nhập tên của bạn"
-              />
-            </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Tên</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={editName}
+                    onChangeText={setEditName}
+                    placeholder="Nhập tên của bạn"
+                  />
+                </View>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setEditModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleUpdateProfile}
-                disabled={editLoading}
-              >
-                {editLoading ? (
-                  <ActivityIndicator size="small" color={COLORS.WHITE} />
-                ) : (
-                  <Text style={styles.saveButtonText}>Lưu</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={() => {
+                      console.log("Đóng modal sửa thông tin");
+                      setEditModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Hủy</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.saveButton]}
+                    onPress={handleUpdateProfile}
+                    disabled={editLoading}
+                  >
+                    <Text style={styles.saveButtonText}>Lưu</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
+
 
       {/* Change Password Modal */}
       <Modal
@@ -255,64 +267,72 @@ const ProfileScreen = () => {
         animationType="slide"
         onRequestClose={() => setPasswordModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Đổi mật khẩu</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.modalOverlay}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Đổi mật khẩu</Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Mật khẩu hiện tại</Text>
-              <TextInput
-                style={styles.input}
-                value={passwordData.current_password}
-                onChangeText={(text) => setPasswordData({ ...passwordData, current_password: text })}
-                placeholder="Nhập mật khẩu hiện tại"
-                secureTextEntry
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Mật khẩu hiện tại</Text>
+                <TextInput
+                  style={styles.input}
+                  value={passwordData.current_password}
+                  onChangeText={(text) => setPasswordData({ ...passwordData, current_password: text })}
+                  placeholder="Nhập mật khẩu hiện tại"
+                  secureTextEntry
+                  returnKeyType="next"
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Mật khẩu mới</Text>
-              <TextInput
-                style={styles.input}
-                value={passwordData.new_password}
-                onChangeText={(text) => setPasswordData({ ...passwordData, new_password: text })}
-                placeholder="Nhập mật khẩu mới"
-                secureTextEntry
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Mật khẩu mới</Text>
+                <TextInput
+                  style={styles.input}
+                  value={passwordData.new_password}
+                  onChangeText={(text) => setPasswordData({ ...passwordData, new_password: text })}
+                  placeholder="Nhập mật khẩu mới"
+                  secureTextEntry
+                  returnKeyType="next"
+                />
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
-              <TextInput
-                style={styles.input}
-                value={passwordData.new_password_confirmation}
-                onChangeText={(text) => setPasswordData({ ...passwordData, new_password_confirmation: text })}
-                placeholder="Nhập lại mật khẩu mới"
-                secureTextEntry
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
+                <TextInput
+                  style={styles.input}
+                  value={passwordData.new_password_confirmation}
+                  onChangeText={(text) => setPasswordData({ ...passwordData, new_password_confirmation: text })}
+                  placeholder="Nhập lại mật khẩu mới"
+                  secureTextEntry
+                  returnKeyType="done"
+                />
+              </View>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setPasswordModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleChangePassword}
-                disabled={passwordLoading}
-              >
-                {passwordLoading ? (
-                  <ActivityIndicator size="small" color={COLORS.WHITE} />
-                ) : (
-                  <Text style={styles.saveButtonText}>Đổi mật khẩu</Text>
-                )}
-              </TouchableOpacity>
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setPasswordModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={handleChangePassword}
+                  disabled={passwordLoading}
+                >
+                  {passwordLoading ? (
+                    <ActivityIndicator size="small" color={COLORS.WHITE} />
+                  ) : (
+                    <Text style={styles.saveButtonText}>Đổi mật khẩu</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </View>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       </Modal>
     </ScrollView>
   )
