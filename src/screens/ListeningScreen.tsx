@@ -12,13 +12,14 @@ import {
   RefreshControl,
 } from "react-native"
 import { COLORS } from "../constants/colors"
-import { getListeningTests } from "../services/listeningtestService"
-import type { ListeningTest } from "../services/listeningtestService"
+import { getListeningTests, getUserListeningResults } from "../services/listeningtestService"
+import type { ListeningTest, UserListeningResult } from "../services/listeningtestService"
 
 const ListeningScreen = ({ navigation }: any) => {
   const [tests, setTests] = useState<ListeningTest[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [latestResults, setLatestResults] = useState<{ [testId: number]: UserListeningResult }>({})
 
   useEffect(() => {
     fetchTests()
@@ -29,10 +30,37 @@ const ListeningScreen = ({ navigation }: any) => {
       setLoading(true)
       const testsData = await getListeningTests()
       setTests(testsData)
+
+      // Fetch latest results for each test
+      await fetchLatestResults(testsData)
     } catch (error: any) {
       Alert.alert("Lỗi", error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchLatestResults = async (testsData: ListeningTest[]) => {
+    try {
+      const results: { [testId: number]: UserListeningResult } = {}
+
+      // Fetch results for each test
+      for (const test of testsData) {
+        try {
+          const userResults = await getUserListeningResults(test.id)
+          if (userResults && userResults.length > 0) {
+            // Get the latest result (first one since they're ordered by created_at desc)
+            results[test.id] = userResults[0]
+          }
+        } catch (error) {
+          // Skip if no results found for this test
+          console.log(`No results found for test ${test.id}`)
+        }
+      }
+
+      setLatestResults(results)
+    } catch (error) {
+      console.error("Error fetching latest results:", error)
     }
   }
 
@@ -72,45 +100,98 @@ const ListeningScreen = ({ navigation }: any) => {
     }
   }
 
-  const renderTestItem = ({ item }: { item: ListeningTest }) => (
-    <TouchableOpacity style={styles.testCard} onPress={() => handleTestPress(item)} activeOpacity={0.7}>
-      <View style={styles.testHeader}>
-        <Text style={styles.testTitle}>{item.title}</Text>
-        <View style={[styles.testTypeBadge, { backgroundColor: getTestTypeColor(item.type) + "20" }]}>
-          <Text style={[styles.testTypeText, { color: getTestTypeColor(item.type) }]}>
-            {getTestTypeLabel(item.type)}
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const getScoreColor = (score: number, passingScore: number) => {
+    if (score >= passingScore) {
+      return COLORS.SUCCESS
+    } else if (score >= passingScore * 0.7) {
+      return COLORS.WARNING
+    } else {
+      return COLORS.ERROR
+    }
+  }
+
+  const renderTestItem = ({ item }: { item: ListeningTest }) => {
+    const latestResult = latestResults[item.id]
+
+    return (
+      <TouchableOpacity style={styles.testCard} onPress={() => handleTestPress(item)} activeOpacity={0.7}>
+        <View style={styles.testHeader}>
+          <Text style={styles.testTitle}>{item.title}</Text>
+          <View style={[styles.testTypeBadge, { backgroundColor: getTestTypeColor(item.type) + "20" }]}>
+            <Text style={[styles.testTypeText, { color: getTestTypeColor(item.type) }]}>
+              {getTestTypeLabel(item.type)}
+            </Text>
+          </View>
+        </View>
+
+        {item.description && (
+          <Text style={styles.testDescription} numberOfLines={2}>
+            {item.description}
           </Text>
-        </View>
-      </View>
+        )}
 
-      {item.description && (
-        <Text style={styles.testDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
-      )}
-
-      <View style={styles.testInfo}>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Câu hỏi:</Text>
-          <Text style={styles.infoValue}>{item.total_questions}</Text>
-        </View>
-        {item.time_limit && (
+        <View style={styles.testInfo}>
+          {/* <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Câu hỏi:</Text>
+            <Text style={styles.infoValue}>{item.total_questions}</Text>
+          </View> */}
+          {item.time_limit && (
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Thời gian:</Text>
+              <Text style={styles.infoValue}>{item.time_limit} phút</Text>
+            </View>
+          )}
           <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Thời gian:</Text>
-            <Text style={styles.infoValue}>{item.time_limit} phút</Text>
+            <Text style={styles.infoLabel}>Điểm đạt:</Text>
+            <Text style={styles.infoValue}>{item.passing_score}%</Text>
+          </View>
+        </View>
+
+        {/* Latest Result Section */}
+        {latestResult && (
+          <View style={styles.latestResultContainer}>
+            <Text style={styles.latestResultTitle}>Kết quả gần nhất:</Text>
+            <View style={styles.resultInfo}>
+              <View style={styles.resultItem}>
+                <Text style={styles.resultLabel}>Điểm:</Text>
+                <Text style={[styles.resultScore, { color: getScoreColor(latestResult.score, item.passing_score) }]}>
+                  {latestResult.score}%
+                </Text>
+              </View>
+              <View style={styles.resultItem}>
+                <Text style={styles.resultLabel}>Đúng:</Text>
+                <Text style={styles.resultValue}>
+                  {latestResult.correct_answers}/{latestResult.total_questions}
+                </Text>
+              </View>
+              {/* <View style={styles.resultItem}>
+                <Text style={styles.resultLabel}>Trạng thái:</Text>
+                <Text style={[styles.resultStatus, { color: latestResult.passed ? COLORS.SUCCESS : COLORS.ERROR }]}>
+                  {latestResult.passed ? "Đạt" : "Chưa đạt"}
+                </Text>
+              </View> */}
+            </View>
+            <Text style={styles.resultDate}>{formatDate(latestResult.created_at)}</Text>
           </View>
         )}
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Điểm đạt:</Text>
-          <Text style={styles.infoValue}>{item.passing_score}%</Text>
-        </View>
-      </View>
 
-      <View style={styles.testFooter}>
-        <Text style={styles.startButton}>Bắt đầu →</Text>
-      </View>
-    </TouchableOpacity>
-  )
+        <View style={styles.testFooter}>
+          <Text style={styles.startButton}>{latestResult ? "Làm lại →" : "Bắt đầu →"}</Text>
+        </View>
+      </TouchableOpacity>
+    )
+  }
 
   if (loading) {
     return (
@@ -274,6 +355,52 @@ const styles = StyleSheet.create({
     color: COLORS.WHITE,
     fontSize: 16,
     fontWeight: "600",
+  },
+  latestResultContainer: {
+    backgroundColor: COLORS.BACKGROUND,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+  },
+  latestResultTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.TEXT_PRIMARY,
+    marginBottom: 8,
+  },
+  resultInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  resultItem: {
+    alignItems: "center",
+  },
+  resultLabel: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    marginBottom: 2,
+  },
+  resultScore: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  resultValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.TEXT_PRIMARY,
+  },
+  resultStatus: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  resultDate: {
+    fontSize: 12,
+    color: COLORS.TEXT_TERTIARY,
+    textAlign: "center",
+    fontStyle: "italic",
   },
 })
 

@@ -23,6 +23,7 @@ import TestScreen from "../screens/TestScreen"
 import TestDetailScreen from "../screens/TestDetailScreen"
 import ListeningScreen from "../screens/ListeningScreen"
 import ListeningDetailScreen from "../screens/ListeningDetailScreen"
+import OTPVerification from "../screens/OTPverification"
 
 const { width } = Dimensions.get('window')
 
@@ -31,6 +32,7 @@ type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
   ForgotPassword: undefined;
+  OTPVerification: undefined;
 }
 
 type MainStackParamList = {
@@ -61,6 +63,14 @@ const AuthStackNavigator = () => {
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
       <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen 
+          name="OTPVerification" 
+          component={OTPVerification}
+          options={{ 
+            title: 'Xác thực OTP',
+            headerShown: true 
+          }}
+        />
     </AuthStack.Navigator>
   )
 }
