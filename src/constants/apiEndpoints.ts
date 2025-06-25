@@ -10,6 +10,8 @@ export const ENDPOINTS = {
   LOGOUT: "/auth/logout",
   USER: "/auth/user",
   USER_PROFILE: "/auth/user",
+  SEND_RESET_OTP: "auth/send-reset-otp",
+  RESET_PASSWORD_OTP: "auth/reset-password-otp",
   FORGOT_PASSWORD: "/auth/forgot-password",
   UPDATE_PROFILE: "/auth/profile",
   CHANGE_PASSWORD: "/auth/change-password",
