@@ -12,14 +12,38 @@ import {
   Alert,
 } from "react-native"
 import { COLORS } from "../constants/colors"
-import { getTests } from "../services/testService"
-import type { Test } from "../services/testService"
+import { getTests, getUserTestResults, type Test, type UserTestResult } from "../services/testService"
 
 const TestScreen = ({ navigation }: any) => {
   const [tests, setTests] = useState<Test[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [latestResults, setLatestResults] = useState<{ [testId: number]: UserTestResult }>({})
+
+  const fetchLatestResults = async (testsData: Test[]) => {
+    try {
+      const results: { [testId: number]: UserTestResult } = {}
+
+      // Fetch results for each test
+      for (const test of testsData) {
+        try {
+          const userResults = await getUserTestResults(test.id)
+          if (userResults && userResults.length > 0) {
+            // Get the latest result (first one since they're ordered by created_at desc)
+            results[test.id] = userResults[0]
+          }
+        } catch (error) {
+          // Skip if no results found for this test
+          console.log(`No results found for test ${test.id}`)
+        }
+      }
+
+      setLatestResults(results)
+    } catch (error) {
+      console.error("Error fetching latest results:", error)
+    }
+  }
 
   const fetchTests = async () => {
     try {
@@ -27,6 +51,9 @@ const TestScreen = ({ navigation }: any) => {
       setError(null)
       const data = await getTests()
       setTests(data)
+
+      // Fetch latest results for each test
+      await fetchLatestResults(data)
     } catch (err: any) {
       console.error("Error fetching tests:", err)
       setError(err.message || "Không thể tải danh sách test")
@@ -77,6 +104,27 @@ const TestScreen = ({ navigation }: any) => {
         return COLORS.WARNING
       default:
         return COLORS.GRAY
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const getScoreColor = (score: number, passingScore: number) => {
+    if (score >= passingScore) {
+      return COLORS.SUCCESS
+    } else if (score >= passingScore * 0.7) {
+      return COLORS.WARNING
+    } else {
+      return COLORS.ERROR
     }
   }
 
@@ -155,6 +203,44 @@ const TestScreen = ({ navigation }: any) => {
                 </View>
               </View>
 
+              {/* Latest Result Section */}
+              {latestResults[item.id] && (
+                <View style={styles.latestResultContainer}>
+                  <Text style={styles.latestResultTitle}>Kết quả gần nhất:</Text>
+                  <View style={styles.resultInfo}>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultLabel}>Điểm:</Text>
+                      <Text
+                        style={[
+                          styles.resultScore,
+                          { color: getScoreColor(latestResults[item.id].score, item.passing_score) },
+                        ]}
+                      >
+                        {latestResults[item.id].score}%
+                      </Text>
+                    </View>
+                    <View style={styles.resultItem}>
+                      <Text style={styles.resultLabel}>Đúng:</Text>
+                      <Text style={styles.resultValue}>
+                        {latestResults[item.id].correct_answers}/{latestResults[item.id].total_questions}
+                      </Text>
+                    </View>
+                    {/* <View style={styles.resultItem}>
+                      <Text style={styles.resultLabel}>Trạng thái:</Text>
+                      <Text
+                        style={[
+                          styles.resultStatus,
+                          { color: latestResults[item.id].passed ? COLORS.SUCCESS : COLORS.ERROR },
+                        ]}
+                      >
+                        {latestResults[item.id].passed ? "Đạt" : "Chưa đạt"}
+                      </Text>
+                    </View> */}
+                  </View>
+                  <Text style={styles.resultDate}>{formatDate(latestResults[item.id].created_at)}</Text>
+                </View>
+              )}
+
               <View style={styles.testFooter}>
                 <Text style={[styles.statusText, { color: item.is_active ? COLORS.SUCCESS : COLORS.ERROR }]}>
                   {item.is_active ? "✅ Có thể thực hiện" : "❌ Không khả dụng"}
@@ -162,7 +248,7 @@ const TestScreen = ({ navigation }: any) => {
 
                 {item.is_active && (
                   <View style={styles.startButton}>
-                    <Text style={styles.startButtonText}>Bắt đầu →</Text>
+                    <Text style={styles.startButtonText}>{latestResults[item.id] ? "Làm lại →" : "Bắt đầu →"}</Text>
                   </View>
                 )}
               </View>
@@ -327,6 +413,52 @@ const styles = StyleSheet.create({
   },
   inactiveText: {
     color: COLORS.TEXT_TERTIARY,
+  },
+  latestResultContainer: {
+    backgroundColor: COLORS.BACKGROUND,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+  },
+  latestResultTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.TEXT_PRIMARY,
+    marginBottom: 8,
+  },
+  resultInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  resultItem: {
+    alignItems: "center",
+  },
+  resultLabel: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    marginBottom: 2,
+  },
+  resultScore: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  resultValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.TEXT_PRIMARY,
+  },
+  resultStatus: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  resultDate: {
+    fontSize: 12,
+    color: COLORS.TEXT_TERTIARY,
+    textAlign: "center",
+    fontStyle: "italic",
   },
 })
 

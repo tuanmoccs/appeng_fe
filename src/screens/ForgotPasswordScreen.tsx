@@ -1,5 +1,7 @@
+"use client"
+
 // src/screens/ForgotPasswordScreen.tsx
-import React, { useState } from 'react';
+import { useState } from "react"
 import {
   View,
   Text,
@@ -13,73 +15,73 @@ import {
   Alert,
   Keyboard,
   TouchableWithoutFeedback,
-} from 'react-native';
-import { COLORS } from '../constants/colors';
-import api from '../services/api';
-import { ENDPOINTS } from '../constants/apiEndpoints';
-import { validateEmail } from '../utils/validation';
+} from "react-native"
+import { COLORS } from "../constants/colors"
+import { validateEmail } from "../utils/validation"
+import { sendResetOTP } from "../services/otpService"
 
 const ForgotPasswordScreen = ({ navigation }: any) => {
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [email, setEmail] = useState("")
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const validateForm = () => {
     if (!email.trim()) {
-      setError('Vui lòng nhập email');
-      return false;
+      setError("Vui lòng nhập email")
+      return false
     } else if (!validateEmail(email.trim())) {
-      setError('Email không hợp lệ');
-      return false;
+      setError("Email không hợp lệ")
+      return false
     }
-    setError('');
-    return true;
-  };
+    setError("")
+    return true
+  }
 
   const handleResetPassword = async () => {
     // Đóng keyboard trước khi validate
-    Keyboard.dismiss();
-    
-    if (!validateForm()) return;
+    Keyboard.dismiss()
 
-    setIsLoading(true);
+    if (!validateForm()) return
+
+    setIsLoading(true)
     try {
-      await api.post(ENDPOINTS.FORGOT_PASSWORD, { email: email.trim() });
-      setIsSuccess(true);
+      await sendResetOTP(email.trim())
+      // Navigate to OTP verification screen
+      navigation.navigate("OTPVerification", { email: email.trim() })
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Đã xảy ra lỗi. Vui lòng thử lại sau.';
-      Alert.alert('Lỗi', message);
+      const message = error.message || "Đã xảy ra lỗi. Vui lòng thử lại sau."
+      Alert.alert("Lỗi", message)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleBackToLogin = () => {
-    Keyboard.dismiss();
-    navigation.navigate('Login');
-  };
+    Keyboard.dismiss()
+    navigation.navigate("Login")
+  }
 
   const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
+    Keyboard.dismiss()
+  }
 
   const handleEmailChange = (text: string) => {
-    setEmail(text);
+    setEmail(text)
     // Xóa lỗi khi người dùng bắt đầu nhập
     if (error) {
-      setError('');
+      setError("")
     }
-  };
+  }
 
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -103,7 +105,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
             ) : (
               <>
                 <Text style={styles.description}>
-                  Nhập email của bạn và chúng tôi sẽ gửi cho bạn hướng dẫn để đặt lại mật khẩu.
+                  Nhập email của bạn và chúng tôi sẽ gửi cho bạn mã OTP để đặt lại mật khẩu.
                 </Text>
 
                 <View style={styles.inputContainer}>
@@ -131,7 +133,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                   {isLoading ? (
                     <ActivityIndicator size="small" color={COLORS.WHITE} />
                   ) : (
-                    <Text style={styles.buttonText}>Đặt lại mật khẩu</Text>
+                    <Text style={styles.buttonText}>Gửi mã OTP</Text>
                   )}
                 </TouchableOpacity>
 
@@ -148,8 +150,8 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
         </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -160,7 +162,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingVertical: 40,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   formContainer: {
     backgroundColor: COLORS.WHITE,
@@ -174,23 +176,23 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.TEXT_PRIMARY,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   description: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
     marginBottom: 24,
-    textAlign: 'center',
+    textAlign: "center",
   },
   inputContainer: {
     marginBottom: 24,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     color: COLORS.TEXT_PRIMARY,
     marginBottom: 8,
   },
@@ -215,8 +217,8 @@ const styles = StyleSheet.create({
   button: {
     height: 50,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 16,
   },
   resetButton: {
@@ -234,24 +236,24 @@ const styles = StyleSheet.create({
   buttonText: {
     color: COLORS.WHITE,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   backButtonText: {
     color: COLORS.TEXT_PRIMARY,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   successContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 16,
   },
   successText: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
     marginBottom: 24,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
-});
+})
 
-export default ForgotPasswordScreen;
+export default ForgotPasswordScreen
