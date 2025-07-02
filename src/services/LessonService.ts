@@ -56,7 +56,7 @@ export const getLessons = async (): Promise<Lesson[]> => {
 
 export const getLessonById = async (lessonId: number): Promise<Lesson> => {
   try {
-    const response = await api.get(ENDPOINTS.LESSON_DETAIL(lessonId))
+    const response = await api.get(ENDPOINTS.LESSON_DETAIL(lessonId)) //Gửi get request đến server
     return response.data.lesson || response.data
   } catch (error) {
     console.error(`Get lesson ${lessonId} error:`, error)

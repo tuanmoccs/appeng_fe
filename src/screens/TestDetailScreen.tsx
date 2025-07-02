@@ -17,7 +17,7 @@ import { getTestById, submitTest } from "../services/testService"
 import type { Test, TestAnswer, TestResult } from "../services/testService"
 
 const TestDetailScreen = ({ route, navigation }: any) => {
-  const { testId } = route.params
+  const { testId } = route.params // Nhận ID test từ màn hình trước
 
   const [test, setTest] = useState<Test | null>(null)
   const [loading, setLoading] = useState(true)
@@ -30,21 +30,18 @@ const TestDetailScreen = ({ route, navigation }: any) => {
 
   useEffect(() => {
     fetchTest()
-
-    // Handle hardware back button
     const backHandler = BackHandler.addEventListener("hardwareBackPress", handleBackPress)
     return () => backHandler.remove()
   }, [])
 
   useEffect(() => {
-    // Setup timer if test has time limit
     if (test?.time_limit && timeRemaining === null && !showResult) {
-      setTimeRemaining(test.time_limit * 60) // Convert minutes to seconds
+      setTimeRemaining(test.time_limit * 60) 
     }
   }, [test])
 
   useEffect(() => {
-    // Timer countdown
+    // Đếm ngược
     let interval: NodeJS.Timeout | null = null
 
     if (timeRemaining !== null && timeRemaining > 0 && !showResult) {
@@ -69,7 +66,6 @@ const TestDetailScreen = ({ route, navigation }: any) => {
       setLoading(true)
       const testData = await getTestById(testId)
 
-      // Validate test data
       if (!testData || !testData.questions || testData.questions.length === 0) {
         throw new Error("Test không có câu hỏi hoặc dữ liệu không hợp lệ")
       }
@@ -95,7 +91,6 @@ const TestDetailScreen = ({ route, navigation }: any) => {
       navigation.goBack()
       return true
     }
-
     Alert.alert("Thoát test", "Bạn có chắc chắn muốn thoát? Tiến độ sẽ bị mất.", [
       { text: "Hủy", style: "cancel" },
       { text: "Thoát", onPress: () => navigation.goBack() },
@@ -131,13 +126,12 @@ const TestDetailScreen = ({ route, navigation }: any) => {
   const handleSubmitTest = async () => {
     if (!test?.questions) return
 
-    // Check if all questions are answered
+    // Kiểm tra xem tất cả các câu hỏi đã được trả lời chưa
     const unansweredQuestions = test.questions.filter((q) => !userAnswers[q.id])
 
     if (unansweredQuestions.length > 0) {
-      Alert.alert("Chưa hoàn thành", `Bạn còn ${unansweredQuestions.length} câu chưa trả lời. Bạn có muốn nộp bài?`, [
-        { text: "Hủy", style: "cancel" },
-        { text: "Nộp bài", onPress: submitAnswers },
+      Alert.alert("Vui lòng trả lời tất cả câu hỏi trước khi nộp bài.", `Bạn còn ${unansweredQuestions.length} câu chưa trả lời.`, [
+        { text: "Ok", style: "cancel" },
       ])
     } else {
       Alert.alert("Nộp bài", "Bạn có chắc chắn muốn nộp bài?", [
@@ -153,7 +147,7 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     try {
       setIsSubmitting(true)
 
-      // Convert answers to required format
+      // Chuyển đổi đáp án thành format server yêu cầu
       const answers: TestAnswer[] = test.questions.map((question) => ({
         question_id: question.id,
         selected_answer: userAnswers[question.id] || "",
