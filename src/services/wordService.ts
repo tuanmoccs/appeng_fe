@@ -1,7 +1,7 @@
 
 import api from "./api";
 import { ENDPOINTS } from "../constants/apiEndpoints";
-import { Word } from "../types/lesson";
+import { Word } from "../types/word";
 
 // Get all words
 export const getWords = async (): Promise<Word[]> => {
