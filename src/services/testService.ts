@@ -4,7 +4,7 @@ import type { Test, TestQuestion, TestAnswer, TestResult, UserTestResult } from 
 export const getTests = async (): Promise<Test[]> => {
   try {
     console.log("📝 Fetching tests from:", "/tests")
-    const response = await api.get("/tests")
+    const response = await api.get("/tests") // Gửi get request đến server
     console.log("✅ Tests fetched successfully:", response.data)
     return response.data
   } catch (error: any) {
@@ -24,36 +24,35 @@ export const getTests = async (): Promise<Test[]> => {
   }
 }
 
-// Get test by ID with questions
+  // Nhận bài kiểm tra theo ID với các câu hỏi
 export const getTestById = async (testId: number): Promise<Test> => {
   try {
     console.log(`📝 Fetching test ${testId}...`)
     const response = await api.get(`/tests/${testId}`)
     console.log(`✅ Test ${testId} raw response:`, response.data)
 
-    // Handle both success response formats
+  // Xử lý cả hai định dạng phản hồi thành công
     const testData = response.data.success ? response.data.test : response.data
 
-    // Validate test data structure
+    // Xác thực dữ liệu
     if (!testData) {
       throw new Error("Không tìm thấy dữ liệu test")
     }
 
-    // Ensure questions array exists
+    // Đảm bảo mảng câu hỏi tồn tại
     if (!testData.questions) {
       testData.questions = []
     }
-
-    // Validate and process questions
+    // Xử lý câu hỏi - chuyển options từ JSON string thành array
     if (testData.questions && Array.isArray(testData.questions)) {
       testData.questions = testData.questions.map((question: TestQuestion, index: number) => {
         try {
-          // Options should already be processed by backend, but double-check
+          // Options có thể là string JSON, cần parse thành array
           if (typeof question.options === "string") {
             question.options = JSON.parse(question.options)
           }
 
-          // Ensure options is an array
+          // Đảm bảo options là array
           if (!Array.isArray(question.options)) {
             console.warn(`Question ${index} options is not an array:`, question.options)
             question.options = []
@@ -64,7 +63,7 @@ export const getTestById = async (testId: number): Promise<Test> => {
           console.error(`❌ Error processing question ${index}:`, parseError)
           return {
             ...question,
-            options: [], // Fallback to empty array
+            options: [], // Fallback thành array rỗng
           }
         }
       })
@@ -91,14 +90,14 @@ export const getTestById = async (testId: number): Promise<Test> => {
   }
 }
 
-// Submit test answers
+// Nộp bài
 export const submitTest = async (testId: number, answers: TestAnswer[]): Promise<TestResult> => {
   try {
     console.log(`📝 Submitting test ${testId} with answers:`, answers)
     const response = await api.post(`/tests/${testId}/submit`, { answers })
     console.log(`✅ Test ${testId} submitted successfully:`, response.data)
 
-    // Handle response format
+    // Xử lý định dạng phản hồi
     return response.data.success ? response.data.result : response.data
   } catch (error: any) {
     console.error(`❌ Submit test ${testId} error:`, error)
@@ -111,14 +110,14 @@ export const submitTest = async (testId: number, answers: TestAnswer[]): Promise
   }
 }
 
-// Get user test results
+// Nhận kết quả ktra của người dùng
 export const getUserTestResults = async (testId: number): Promise<UserTestResult[]> => {
   try {
     console.log(`📊 Fetching user results for test ${testId}...`)
     const response = await api.get(`/tests/${testId}/results`)
     console.log("✅ User test results fetched successfully:", response.data)
 
-    // Handle response format
+    // Xử lý định dạng phản hồi
     return response.data.success ? response.data.results : response.data
   } catch (error: any) {
     console.error("❌ Get user test results error:", error)

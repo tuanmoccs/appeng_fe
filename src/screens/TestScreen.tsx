@@ -16,26 +16,26 @@ import { getTests, getUserTestResults} from "../services/testService"
 import type { Test, UserTestResult } from "../types/test"
 
 const TestScreen = ({ navigation }: any) => {
-  const [tests, setTests] = useState<Test[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tests, setTests] = useState<Test[]>([]) // Danh sách các bài test
+  const [loading, setLoading] = useState(true)  
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [latestResults, setLatestResults] = useState<{ [testId: number]: UserTestResult }>({})
+  const [latestResults, setLatestResults] = useState<{ [testId: number]: UserTestResult }>({}) // Kết quả gần nhất của từng test
 
   const fetchLatestResults = async (testsData: Test[]) => {
     try {
       const results: { [testId: number]: UserTestResult } = {}
 
-      // Fetch results for each test
+      // Lấy kết quả cho mỗi bài kiểm tra
       for (const test of testsData) {
         try {
           const userResults = await getUserTestResults(test.id)
           if (userResults && userResults.length > 0) {
-            // Get the latest result (first one since they're ordered by created_at desc)
+            // Lấy kết quả mới nhất
             results[test.id] = userResults[0]
           }
         } catch (error) {
-          // Skip if no results found for this test
+          // Bỏ qua nếu không tìm thấy kết quả cho bài kiểm tra này
           console.log(`No results found for test ${test.id}`)
         }
       }
@@ -53,7 +53,7 @@ const TestScreen = ({ navigation }: any) => {
       const data = await getTests()
       setTests(data)
 
-      // Fetch latest results for each test
+      // Lấy kết quả mới nhất cho mỗi bài kiểm tra
       await fetchLatestResults(data)
     } catch (err: any) {
       console.error("Error fetching tests:", err)
@@ -70,7 +70,7 @@ const TestScreen = ({ navigation }: any) => {
   }
 
   useEffect(() => {
-    fetchTests()
+    fetchTests() // Tự động load dữ liệu khi vào màn hình
   }, [])
 
   const handleTestPress = (test: Test) => {
@@ -79,7 +79,7 @@ const TestScreen = ({ navigation }: any) => {
       return
     }
 
-    navigation.navigate("TestDetail", { testId: test.id })
+    navigation.navigate("TestDetail", { testId: test.id }) // Chuyển đến màn hình làm test
   }
 
   const getTypeText = (type: string) => {
@@ -199,8 +199,8 @@ const TestScreen = ({ navigation }: any) => {
                 )}
 
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>🎯 Điểm đạt:</Text>
-                  <Text style={styles.metaValue}>{item.passing_score}%</Text>
+                  <Text style={styles.metaLabel}>🎯 Điểm cần đạt: </Text>
+                  <Text style={styles.metaValue}>{item.passing_score} %</Text>
                 </View>
               </View>
 

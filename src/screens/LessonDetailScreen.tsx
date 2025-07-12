@@ -18,7 +18,7 @@ import { styles } from "../styles/LessonDetailScreen.styles"
 const { width } = Dimensions.get("window")
 
 const LessonDetailScreen = ({ route, navigation }: any) => {
-  const { lessonId } = route.params
+  const { lessonId } = route.params 
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentSection, setCurrentSection] = useState(0)
@@ -27,14 +27,15 @@ const LessonDetailScreen = ({ route, navigation }: any) => {
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    fetchLesson()
+    fetchLesson() // Tự động tải dữ liệu khi vào màn hình
   }, [lessonId])
 
   const fetchLesson = async () => {
     try {
       setLoading(true)
-      const lessonData = await getLessonById(lessonId)
+      const lessonData = await getLessonById(lessonId) // Gọi API lấy chi tiết bài học
       setLesson(lessonData)
+      // Khôi phục vị trí học cuối cùng 
       setCurrentSection(lessonData.current_section || 0)
       setCurrentItem(lessonData.current_item || 0)
     } catch (error: any) {
@@ -53,8 +54,8 @@ const LessonDetailScreen = ({ route, navigation }: any) => {
 
     if (!lesson?.content?.sections) return 0
 
-    let totalItems = 0
-    let completedCount = 0
+    let totalItems = 0  // Tổng số mục trong bài học
+    let completedCount = 0 // Số mục đã hoàn thành
 
     lesson.content.sections.forEach((section, sectionIndex) => {
       section.items.forEach((item, itemIndex) => {

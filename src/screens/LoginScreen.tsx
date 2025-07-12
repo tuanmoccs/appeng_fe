@@ -31,7 +31,7 @@ const LoginScreen = ({ navigation }: any) => {
   // Thêm refs cho TextInput
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
-
+  // State lưu thông tin đăng nhập
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',

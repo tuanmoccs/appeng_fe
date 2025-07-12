@@ -12,6 +12,7 @@ import {
   RefreshControl,
 } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
+import { useFocusEffect } from "@react-navigation/native"
 import { COLORS } from "../constants/colors"
 import { fetchLessons, fetchLessonStats } from "../store/slices/lessonSlice"
 import type { RootState, AppDispatch } from "../store/store"
@@ -25,10 +26,10 @@ const LessonScreen = ({ navigation }: any) => {
   useEffect(() => {
     loadData()
   }, [])
-
+  
   const loadData = async () => {
     try {
-      await Promise.all([dispatch(fetchLessons()).unwrap(), dispatch(fetchLessonStats()).unwrap()])
+      await Promise.all([dispatch(fetchLessons()).unwrap(), dispatch(fetchLessonStats()).unwrap()]) //Lấy danh sách bài học và thống kê tiến độ
     } catch (error: any) {
       console.error("Error loading lesson data:", error)
       Alert.alert("Lỗi", "Không thể tải dữ liệu bài học")
@@ -72,6 +73,7 @@ const LessonScreen = ({ navigation }: any) => {
       Alert.alert("Bài học bị khóa", "Bạn cần hoàn thành bài học trước đó để mở khóa bài học này.")
       return
     }
+    // Chuyển đến màn hình học chi tiết, truyền ID bài học
     navigation.navigate("LessonDetail", { lessonId: lesson.id })
   }
 
