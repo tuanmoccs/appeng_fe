@@ -6,7 +6,7 @@ import WordCard from "../components/WordCard";
 import Button from "../components/Button";
 import { getWords } from "../services/wordService";
 import { Word } from "../types/lesson";
-
+import { styles } from "../styles/WordListScreen.styles";
 const WordListScreen = ({ navigation }: any) => {
   const [words, setWords] = useState<Word[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,48 +87,5 @@ const WordListScreen = ({ navigation }: any) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: COLORS.BACKGROUND,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: COLORS.BACKGROUND,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 16,
-  },
-  listContainer: {
-    paddingBottom: 20,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 16,
-  },
-  errorText: {
-    fontSize: 16,
-    color: COLORS.ERROR,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  button: {
-    width: 200,
-  },
-});
 
 export default WordListScreen;
