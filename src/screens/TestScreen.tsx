@@ -4,37 +4,38 @@ import { useEffect, useState } from "react"
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
   Alert,
 } from "react-native"
-import { COLORS } from "../constants/colors"
-import { getTests, getUserTestResults, type Test, type UserTestResult } from "../services/testService"
+import { COLORS } from "../constants/colors.ts"
+import { styles } from "../styles/TestScreen.styles"
+import { getTests, getUserTestResults} from "../services/testService"
+import type { Test, UserTestResult } from "../types/test"
 
 const TestScreen = ({ navigation }: any) => {
-  const [tests, setTests] = useState<Test[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tests, setTests] = useState<Test[]>([]) // Danh sách các bài test
+  const [loading, setLoading] = useState(true)  
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [latestResults, setLatestResults] = useState<{ [testId: number]: UserTestResult }>({})
+  const [latestResults, setLatestResults] = useState<{ [testId: number]: UserTestResult }>({}) // Kết quả gần nhất của từng test
 
   const fetchLatestResults = async (testsData: Test[]) => {
     try {
       const results: { [testId: number]: UserTestResult } = {}
 
-      // Fetch results for each test
+      // Lấy kết quả cho mỗi bài kiểm tra
       for (const test of testsData) {
         try {
           const userResults = await getUserTestResults(test.id)
           if (userResults && userResults.length > 0) {
-            // Get the latest result (first one since they're ordered by created_at desc)
+            // Lấy kết quả mới nhất
             results[test.id] = userResults[0]
           }
         } catch (error) {
-          // Skip if no results found for this test
+          // Bỏ qua nếu không tìm thấy kết quả cho bài kiểm tra này
           console.log(`No results found for test ${test.id}`)
         }
       }
@@ -52,7 +53,7 @@ const TestScreen = ({ navigation }: any) => {
       const data = await getTests()
       setTests(data)
 
-      // Fetch latest results for each test
+      // Lấy kết quả mới nhất cho mỗi bài kiểm tra
       await fetchLatestResults(data)
     } catch (err: any) {
       console.error("Error fetching tests:", err)
@@ -69,7 +70,7 @@ const TestScreen = ({ navigation }: any) => {
   }
 
   useEffect(() => {
-    fetchTests()
+    fetchTests() // Tự động load dữ liệu khi vào màn hình
   }, [])
 
   const handleTestPress = (test: Test) => {
@@ -78,7 +79,7 @@ const TestScreen = ({ navigation }: any) => {
       return
     }
 
-    navigation.navigate("TestDetail", { testId: test.id })
+    navigation.navigate("TestDetail", { testId: test.id }) // Chuyển đến màn hình làm test
   }
 
   const getTypeText = (type: string) => {
@@ -198,8 +199,8 @@ const TestScreen = ({ navigation }: any) => {
                 )}
 
                 <View style={styles.metaItem}>
-                  <Text style={styles.metaLabel}>🎯 Điểm đạt:</Text>
-                  <Text style={styles.metaValue}>{item.passing_score}%</Text>
+                  <Text style={styles.metaLabel}>🎯 Điểm cần đạt: </Text>
+                  <Text style={styles.metaValue}>{item.passing_score} %</Text>
                 </View>
               </View>
 
@@ -262,204 +263,5 @@ const TestScreen = ({ navigation }: any) => {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.BACKGROUND,
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
-  },
-  errorText: {
-    fontSize: 16,
-    color: COLORS.ERROR,
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: COLORS.WHITE,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  header: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingTop: 50,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: COLORS.WHITE,
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: COLORS.WHITE,
-    opacity: 0.9,
-  },
-  listContainer: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  testCard: {
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  inactiveCard: {
-    opacity: 0.6,
-  },
-  testHeader: {
-    marginBottom: 12,
-  },
-  testTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  testTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    flex: 1,
-    marginRight: 12,
-  },
-  typeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  typeText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  testDescription: {
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 16,
-    lineHeight: 22,
-  },
-  testMeta: {
-    marginBottom: 16,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  metaLabel: {
-    fontSize: 14,
-    color: COLORS.TEXT_TERTIARY,
-    minWidth: 100,
-  },
-  metaValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
-  },
-  testFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  startButton: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  startButtonText: {
-    color: COLORS.WHITE,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 20,
-  },
-  inactiveText: {
-    color: COLORS.TEXT_TERTIARY,
-  },
-  latestResultContainer: {
-    backgroundColor: COLORS.BACKGROUND,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-  },
-  latestResultTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 8,
-  },
-  resultInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  resultItem: {
-    alignItems: "center",
-  },
-  resultLabel: {
-    fontSize: 12,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 2,
-  },
-  resultScore: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  resultValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
-  },
-  resultStatus: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  resultDate: {
-    fontSize: 12,
-    color: COLORS.TEXT_TERTIARY,
-    textAlign: "center",
-    fontStyle: "italic",
-  },
-})
 
 export default TestScreen

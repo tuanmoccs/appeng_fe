@@ -3,31 +3,7 @@ import api from "./api"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { ENDPOINTS } from "../constants/apiEndpoints"
 
-export interface LoginCredentials {
-  email: string
-  password: string
-  remember?: boolean
-}
-
-export interface RegisterData {
-  name: string
-  email: string
-  password: string
-  password_confirmation: string
-}
-
-export interface AuthResponse {
-  user: {
-    id: number
-    name: string
-    email: string
-    role: string
-    created_at: string
-    updated_at: string
-  }
-  token: string
-}
-
+import type { LoginCredentials, AuthResponse, RegisterData } from "../types/auth"
 // Initialize auth on app start
 export const initializeAuth = async (): Promise<void> => {
   try {

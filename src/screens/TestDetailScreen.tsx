@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import {
   View,
   Text,
-  StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
@@ -14,10 +13,11 @@ import {
 import { COLORS } from "../constants/colors"
 import TestQuestion from "../components/TestQuestion"
 import { getTestById, submitTest } from "../services/testService"
-import type { Test, TestAnswer, TestResult } from "../services/testService"
+import type { Test, TestAnswer, TestResult } from "../types/test"
+import { styles } from "../styles/TestDetailScreem.styles"
 
 const TestDetailScreen = ({ route, navigation }: any) => {
-  const { testId } = route.params
+  const { testId } = route.params // Nhận ID test từ màn hình trước
 
   const [test, setTest] = useState<Test | null>(null)
   const [loading, setLoading] = useState(true)
@@ -30,21 +30,18 @@ const TestDetailScreen = ({ route, navigation }: any) => {
 
   useEffect(() => {
     fetchTest()
-
-    // Handle hardware back button
     const backHandler = BackHandler.addEventListener("hardwareBackPress", handleBackPress)
     return () => backHandler.remove()
   }, [])
 
   useEffect(() => {
-    // Setup timer if test has time limit
     if (test?.time_limit && timeRemaining === null && !showResult) {
-      setTimeRemaining(test.time_limit * 60) // Convert minutes to seconds
+      setTimeRemaining(test.time_limit * 60) 
     }
   }, [test])
 
   useEffect(() => {
-    // Timer countdown
+    // Đếm ngược
     let interval: NodeJS.Timeout | null = null
 
     if (timeRemaining !== null && timeRemaining > 0 && !showResult) {
@@ -69,7 +66,6 @@ const TestDetailScreen = ({ route, navigation }: any) => {
       setLoading(true)
       const testData = await getTestById(testId)
 
-      // Validate test data
       if (!testData || !testData.questions || testData.questions.length === 0) {
         throw new Error("Test không có câu hỏi hoặc dữ liệu không hợp lệ")
       }
@@ -95,7 +91,6 @@ const TestDetailScreen = ({ route, navigation }: any) => {
       navigation.goBack()
       return true
     }
-
     Alert.alert("Thoát test", "Bạn có chắc chắn muốn thoát? Tiến độ sẽ bị mất.", [
       { text: "Hủy", style: "cancel" },
       { text: "Thoát", onPress: () => navigation.goBack() },
@@ -131,13 +126,12 @@ const TestDetailScreen = ({ route, navigation }: any) => {
   const handleSubmitTest = async () => {
     if (!test?.questions) return
 
-    // Check if all questions are answered
+    // Kiểm tra xem tất cả các câu hỏi đã được trả lời chưa
     const unansweredQuestions = test.questions.filter((q) => !userAnswers[q.id])
 
     if (unansweredQuestions.length > 0) {
-      Alert.alert("Chưa hoàn thành", `Bạn còn ${unansweredQuestions.length} câu chưa trả lời. Bạn có muốn nộp bài?`, [
-        { text: "Hủy", style: "cancel" },
-        { text: "Nộp bài", onPress: submitAnswers },
+      Alert.alert("Vui lòng trả lời tất cả câu hỏi trước khi nộp bài.", `Bạn còn ${unansweredQuestions.length} câu chưa trả lời.`, [
+        { text: "Ok", style: "cancel" },
       ])
     } else {
       Alert.alert("Nộp bài", "Bạn có chắc chắn muốn nộp bài?", [
@@ -153,7 +147,7 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     try {
       setIsSubmitting(true)
 
-      // Convert answers to required format
+      // Chuyển đổi đáp án thành format server yêu cầu
       const answers: TestAnswer[] = test.questions.map((question) => ({
         question_id: question.id,
         selected_answer: userAnswers[question.id] || "",
@@ -337,196 +331,4 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.BACKGROUND,
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
-  },
-  errorText: {
-    fontSize: 16,
-    color: COLORS.ERROR,
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  header: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    marginBottom: 12,
-  },
-  backButtonText: {
-    color: COLORS.WHITE,
-    fontSize: 16,
-  },
-  headerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  testTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.WHITE,
-    flex: 1,
-    marginRight: 12,
-  },
-  timer: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.WHITE,
-  },
-  timerWarning: {
-    color: COLORS.WARNING,
-  },
-  progressContainer: {
-    backgroundColor: COLORS.WHITE,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: COLORS.GRAY,
-    borderRadius: 3,
-    marginBottom: 8,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: 3,
-  },
-  progressText: {
-    fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-    textAlign: "center",
-  },
-  questionContainer: {
-    flex: 1,
-    backgroundColor: COLORS.WHITE,
-  },
-  navigationContainer: {
-    flexDirection: "row",
-    padding: 20,
-    gap: 12,
-    backgroundColor: COLORS.WHITE,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.BORDER,
-  },
-  navButton: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  prevButton: {
-    backgroundColor: COLORS.GRAY,
-  },
-  nextButton: {
-    backgroundColor: COLORS.PRIMARY,
-  },
-  submitButton: {
-    backgroundColor: COLORS.SUCCESS,
-  },
-  disabledButton: {
-    backgroundColor: COLORS.GRAY + "50",
-  },
-  navButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.WHITE,
-  },
-  disabledButtonText: {
-    color: COLORS.TEXT_TERTIARY,
-  },
-  button: {
-    backgroundColor: COLORS.PRIMARY,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  primaryButton: {
-    backgroundColor: COLORS.PRIMARY,
-  },
-  buttonText: {
-    color: COLORS.WHITE,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  resultContainer: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  resultHeader: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  resultTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 20,
-  },
-  scoreContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scoreText: {
-    fontSize: 36,
-    fontWeight: "bold",
-  },
-  resultStats: {
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 30,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.BORDER,
-  },
-  statLabel: {
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-  },
-  resultActions: {
-    gap: 12,
-  },
-})
-
 export default TestDetailScreen
