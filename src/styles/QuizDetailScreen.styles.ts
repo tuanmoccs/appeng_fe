@@ -116,4 +116,16 @@ export const styles = StyleSheet.create({
     color: COLORS.ERROR,
     fontWeight: '500',
   },
+  chatBotButton: {
+    marginLeft: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.PRIMARY + "20",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  chatBotButtonText : {
+    fontSize: 20,
+  }
 });

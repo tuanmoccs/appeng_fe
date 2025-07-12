@@ -1,6 +1,6 @@
 // src/screens/QuizDetailScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS } from '../constants/colors';
 import Button from '../components/Button';
@@ -8,12 +8,13 @@ import QuizQuestion from '../components/QuizQuestion';
 import { fetchQuizById, submitQuiz, setUserAnswer, clearUserAnswers, clearQuizResult } from '../store/slices/quizSlice';
 import type { RootState, AppDispatch } from '../store/store';
 import { styles } from '../styles/QuizDetailScreen.styles';
+import ChatBot from '../components/ChatBot';
 const QuizDetailScreen = ({ route, navigation }: any) => {
   const { quizId } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { currentQuiz, userAnswers, quizResult, isLoading, error } = useSelector((state: RootState) => state.quiz);
   const [showResults, setShowResults] = useState(false);
-
+  const [showChatBot, setShowChatBot] = useState(false)
   useEffect(() => {
     dispatch(fetchQuizById(quizId));
     dispatch(clearUserAnswers());
@@ -130,7 +131,9 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>{currentQuiz.title}</Text>
       <Text style={styles.description}>{currentQuiz.description}</Text>
-
+      <TouchableOpacity style={styles.chatBotButton} onPress={() => setShowChatBot(true)}>
+                <Text style={styles.chatBotButtonText}>🤖</Text>
+              </TouchableOpacity>
       {currentQuiz.questions?.map((question) => (
         <QuizQuestion
           key={question.id}
@@ -156,6 +159,18 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
           style={styles.button}
         />
       </View>
+      <ChatBot
+        testData={{
+          ...currentQuiz,
+          questions: currentQuiz.questions?.map((q) => ({
+            ...q,
+            correct_answer: undefined,
+          })),
+        }}
+        currentQuestionId={undefined}
+        isVisible={showChatBot}
+        onClose={() => setShowChatBot(false)}
+      />
     </ScrollView>
   );
 };
