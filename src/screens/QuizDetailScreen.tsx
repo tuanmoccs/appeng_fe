@@ -1,6 +1,6 @@
 // src/screens/QuizDetailScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS } from '../constants/colors';
 import Button from '../components/Button';
@@ -8,12 +8,16 @@ import QuizQuestion from '../components/QuizQuestion';
 import { fetchQuizById, submitQuiz, setUserAnswer, clearUserAnswers, clearQuizResult } from '../store/slices/quizSlice';
 import type { RootState, AppDispatch } from '../store/store';
 import { styles } from '../styles/QuizDetailScreen.styles';
+// SỬA IMPORT NÀY
+import QuizChatBot from '../components/ChatBotQuiz'; // Đổi từ ChatBotQuiz thành QuizChatBot
+
 const QuizDetailScreen = ({ route, navigation }: any) => {
   const { quizId } = route.params;
   const dispatch = useDispatch<AppDispatch>();
   const { currentQuiz, userAnswers, quizResult, isLoading, error } = useSelector((state: RootState) => state.quiz);
   const [showResults, setShowResults] = useState(false);
-
+  const [showChatBot, setShowChatBot] = useState(false)
+  
   useEffect(() => {
     dispatch(fetchQuizById(quizId));
     dispatch(clearUserAnswers());
@@ -47,6 +51,9 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
   const handleBackToQuizzes = () => {
     navigation.goBack();
   };
+
+  // THÊM CONSOLE.LOG ĐỂ DEBUG
+  console.log('showChatBot:', showChatBot);
 
   if (isLoading && !quizResult) {
     return (
@@ -127,37 +134,91 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Text style={styles.title}>{currentQuiz.title}</Text>
-      <Text style={styles.description}>{currentQuiz.description}</Text>
+    <View style={{ flex: 1 }}> {/* THÊM CONTAINER CHÍNH */}
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.title}>{currentQuiz.title}</Text>
+        <Text style={styles.description}>{currentQuiz.description}</Text>
+        
+        {/* SỬA BUTTON CHATBOT */}
+        <TouchableOpacity 
+          style={chatBotButtonStyles.chatBotButton} 
+          onPress={() => {
+            console.log('ChatBot button pressed!'); // DEBUG
+            setShowChatBot(true);
+          }}
+        >
+          <Text style={chatBotButtonStyles.chatBotButtonText}>🤖</Text>
+        </TouchableOpacity>
 
-      {currentQuiz.questions?.map((question) => (
-        <QuizQuestion
-          key={question.id}
-          question={question.question}
-          options={question.options}
-          selectedOption={userAnswers[question.id]}
-          onSelectOption={(answer) => handleSelectAnswer(question.id, answer)}
-        />
-      ))}
+        {currentQuiz.questions?.map((question) => (
+          <QuizQuestion
+            key={question.id}
+            question={question.question}
+            options={question.options}
+            selectedOption={userAnswers[question.id]}
+            onSelectOption={(answer) => handleSelectAnswer(question.id, answer)}
+          />
+        ))}
 
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Submit Quiz"
-          onPress={handleSubmitQuiz}
-          type="primary"
-          style={styles.button}
-          disabled={isLoading || Object.keys(userAnswers).length === 0}
-        />
-        <Button
-          title="Cancel"
-          onPress={handleBackToQuizzes}
-          type="outline"
-          style={styles.button}
-        />
-      </View>
-    </ScrollView>
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Submit Quiz"
+            onPress={handleSubmitQuiz}
+            type="primary"
+            style={styles.button}
+            disabled={isLoading || Object.keys(userAnswers).length === 0}
+          />
+          <Button
+            title="Cancel"
+            onPress={handleBackToQuizzes}
+            type="outline"
+            style={styles.button}
+          />
+        </View>
+      </ScrollView>
+
+      {/* RENDER CHATBOT BÊN NGOÀI SCROLLVIEW */}
+      <QuizChatBot
+        quizData={{
+          ...currentQuiz,
+          questions: currentQuiz.questions?.map((q) => ({
+            ...q,
+            correct_answer: undefined,
+          })),
+        }}
+        currentQuestionId={undefined}
+        isVisible={showChatBot}
+        onClose={() => {
+          console.log('ChatBot close pressed!'); // DEBUG
+          setShowChatBot(false);
+        }}
+      />
+    </View>
   );
 };
+
+// STYLE CHO BUTTON CHATBOT
+const chatBotButtonStyles = StyleSheet.create({
+  chatBotButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    zIndex: 10,
+  },
+  chatBotButtonText: {
+    fontSize: 24,
+  },
+});
 
 export default QuizDetailScreen;

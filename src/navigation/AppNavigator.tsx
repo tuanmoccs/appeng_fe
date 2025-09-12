@@ -23,6 +23,7 @@ import TestScreen from "../screens/TestScreen"
 import TestDetailScreen from "../screens/TestDetailScreen"
 import ListeningScreen from "../screens/ListeningScreen"
 import ListeningDetailScreen from "../screens/ListeningDetailScreen"
+import VoiceChatScreen from "../screens/VoiceChatScreen"
 import OTPVerification from "../screens/OTPverification"
 
 const { width } = Dimensions.get('window')
@@ -48,6 +49,7 @@ type MainStackParamList = {
   Quizzes: undefined;
   QuizDetail: { quizId?: string };
   Profile: undefined;
+  VoiceChatbot: undefined;
 }
 
 type MainStackNavigationProp = StackNavigationProp<MainStackParamList>
@@ -96,6 +98,7 @@ const MenuModal = ({ visible, onClose }: MenuModalProps) => {
     { name: "Tests", title: "📄 Tests", screen: "Tests" },
     { name: "Listenings", title: "🎧 Listening Tests", screen: "Listenings" },
     { name: "Quizzes", title: "✏️ Quizzes", screen: "Quizzes" },
+    { name: "VoiceChatbot", title: "🎙️ VoiceChatbot", screen: "VoiceChatbot" },
     { name: "Profile", title: "👤 Profile", screen: "Profile" },
   ]
 
@@ -269,6 +272,14 @@ const MainStackScreen = () => {
           name="QuizDetail" 
           component={QuizDetailScreen} 
           options={{ title: "Quiz" }} 
+        />
+        <MainStack.Screen 
+          name="VoiceChatbot" 
+          component={VoiceChatScreen} 
+          options={{
+            title: "VoiceChatbot",
+            headerLeft: () => <HamburgerButton />,
+          }} 
         />
         <MainStack.Screen 
           name="Profile" 

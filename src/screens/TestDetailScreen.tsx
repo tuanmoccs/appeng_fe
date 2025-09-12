@@ -15,6 +15,7 @@ import TestQuestion from "../components/TestQuestion"
 import { getTestById, submitTest } from "../services/testService"
 import type { Test, TestAnswer, TestResult } from "../types/test"
 import { styles } from "../styles/TestDetailScreem.styles"
+import ChatBot from "../components/ChatBot"
 
 const TestDetailScreen = ({ route, navigation }: any) => {
   const { testId } = route.params // Nhận ID test từ màn hình trước
@@ -27,6 +28,7 @@ const TestDetailScreen = ({ route, navigation }: any) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [testResult, setTestResult] = useState<TestResult | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const [showChatBot, setShowChatBot] = useState(false)
 
   useEffect(() => {
     fetchTest()
@@ -274,6 +276,9 @@ const TestDetailScreen = ({ route, navigation }: any) => {
             </Text>
           )}
         </View>
+        <TouchableOpacity style={styles.chatBotButton} onPress={() => setShowChatBot(true)}>
+          <Text style={styles.chatBotButtonText}>🤖</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Progress */}
@@ -287,7 +292,12 @@ const TestDetailScreen = ({ route, navigation }: any) => {
           Câu {currentQuestionIndex + 1} / {test.questions.length} • {Object.keys(userAnswers).length} đã trả lời
         </Text>
       </View>
-
+      <ChatBot
+      testData={test}
+      currentQuestionId={currentQuestion?.id}
+      isVisible={showChatBot}
+      onClose={() => setShowChatBot(false)}
+      /> 
       {/* Question */}
       <View style={styles.questionContainer}>
         <TestQuestion
