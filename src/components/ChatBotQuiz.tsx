@@ -17,7 +17,7 @@ import {
   Dimensions,
 } from "react-native"
 import { COLORS } from "../constants/colors"
-import openaiService from "../services/openaiService"
+import quizAIService from "../services/QuizAIService"
 
 interface ChatMessage {
   id: string
@@ -26,72 +26,64 @@ interface ChatMessage {
   timestamp: Date
 }
 
-interface ChatBotProps {
-  testData: any
+interface QuizChatBotProps {
+  quizData: any
   currentQuestionId?: number
   isVisible: boolean
   onClose: () => void
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ testData, currentQuestionId, isVisible, onClose }) => {
+const QuizChatBot: React.FC<QuizChatBotProps> = ({ quizData, currentQuestionId, isVisible, onClose }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputText, setInputText] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [keyboardHeight, setKeyboardHeight] = useState(0)
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const scrollViewRef = useRef<ScrollView>(null)
-  const slideAnim = useRef(new Animated.Value(300)).current
+  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').height)).current
+  const opacityAnim = useRef(new Animated.Value(0)).current
   const textInputRef = useRef<TextInput>(null)
-
-  const screenHeight = Dimensions.get('window').height
-  const baseHeight = screenHeight * 0.7
 
   useEffect(() => {
     if (isVisible) {
       // Hiển thị chatbot
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start()
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start()
 
       // Thêm tin nhắn chào mừng
       if (messages.length === 0) {
         const welcomeMessage: ChatMessage = {
           id: Date.now().toString(),
           role: "assistant",
-          content: `Xin chào! Tôi là AI assistant của bạn cho bài test "${testData.title}". Tôi có thể giúp bạn:\n\n• Giải thích ngữ pháp và từ vựng\n• Hướng dẫn cách làm bài\n• Phân tích câu hỏi\n• Đưa ra gợi ý học tập\n\nBạn có câu hỏi gì không?`,
+          content: `Xin chào! Tôi là AI assistant của bạn cho quiz "${quizData.title}". Tôi có thể giúp bạn:\n\n• Giải thích từ vựng và ngữ nghĩa\n• Hướng dẫn cách làm quiz hiệu quả\n• Phân tích câu hỏi\n• Đưa ra gợi ý học tập và ghi nhớ\n\nBạn có câu hỏi gì không?`,
           timestamp: new Date(),
         }
         setMessages([welcomeMessage])
       }
     } else {
       // Ẩn chatbot
-      Animated.timing(slideAnim, {
-        toValue: 300,
-        duration: 300,
-        useNativeDriver: true,
-      }).start()
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: Dimensions.get('window').height,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start()
     }
   }, [isVisible])
-
-  useEffect(() => {
-    // Keyboard listeners
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
-      setKeyboardHeight(e.endCoordinates.height)
-      setIsKeyboardVisible(true)
-    })
-
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0)
-      setIsKeyboardVisible(false)
-    })
-
-    return () => {
-      keyboardDidShowListener.remove()
-      keyboardDidHideListener.remove()
-    }
-  }, [])
 
   useEffect(() => {
     // Auto scroll to bottom when new message is added
@@ -116,6 +108,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ testData, currentQuestionId, isVisibl
     setInputText("")
     setIsLoading(true)
 
+    // Blur input để ẩn keyboard sau khi gửi
+    textInputRef.current?.blur()
+
     try {
       let response: string
 
@@ -126,9 +121,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ testData, currentQuestionId, isVisibl
           inputText.toLowerCase().includes("câu hỏi này") ||
           inputText.toLowerCase().includes("giải thích"))
       ) {
-        response = await openaiService.analyzeQuestion(testData, currentQuestionId, inputText)
+        response = await quizAIService.analyzeQuestion(quizData, currentQuestionId, inputText)
       } else {
-        response = await openaiService.answerGeneralQuestion(testData, inputText)
+        response = await quizAIService.answerGeneralQuestion(quizData, inputText)
       }
 
       const assistantMessage: ChatMessage = {
@@ -181,84 +176,91 @@ const ChatBot: React.FC<ChatBotProps> = ({ testData, currentQuestionId, isVisibl
     </View>
   )
 
-  if (!isVisible) return null
-
+  // QUAN TRỌNG: Không return null, luôn render component nhưng với opacity = 0
   return (
-    <View style={styles.overlay}>
-      <TouchableOpacity style={styles.backdrop} onPress={onClose} />
+    <Animated.View 
+      style={[
+        styles.overlay,
+        {
+          opacity: opacityAnim,
+          pointerEvents: isVisible ? 'auto' : 'none'
+        }
+      ]}
+    >
+      <TouchableOpacity 
+        style={styles.backdrop}
+        activeOpacity={1}
+        onPress={onClose}
+      />
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardAvoidingView}
+      <Animated.View 
+        style={[
+          styles.chatContainer,
+          {
+            transform: [{ translateY: slideAnim }],
+          }
+        ]}
       >
-        <Animated.View 
-          style={[
-            styles.chatContainer, 
-            { 
-              transform: [{ translateY: slideAnim }],
-              height: baseHeight,
-              marginBottom: isKeyboardVisible ? (Platform.OS === 'ios' ? 0 : keyboardHeight * 0.3) : 0
-            }
-          ]}
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>🤖 AI Assistant</Text>
+            <Text style={styles.headerSubtitle}>Quiz Helper</Text>
+          </View>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Messages */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.headerTitle}>🤖 AI Assistant</Text>
-              <Text style={styles.headerSubtitle}>English Test Helper</Text>
-            </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+          {messages.map(renderMessage)}
 
-          {/* Messages */}
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.messagesContainer}
-            contentContainerStyle={styles.messagesContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {messages.map(renderMessage)}
-
-            {isLoading && (
-              <View style={[styles.messageContainer, styles.assistantMessage]}>
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={COLORS.PRIMARY} />
-                  <Text style={styles.loadingText}>AI đang suy nghĩ...</Text>
-                </View>
+          {isLoading && (
+            <View style={[styles.messageContainer, styles.assistantMessage]}>
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+                <Text style={styles.loadingText}>AI đang suy nghĩ...</Text>
               </View>
-            )}
-          </ScrollView>
+            </View>
+          )}
+        </ScrollView>
 
-          {/* Input */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              ref={textInputRef}
-              style={styles.textInput}
-              value={inputText}
-              onChangeText={setInputText}
-              placeholder="Hỏi AI về bài test..."
-              placeholderTextColor={COLORS.TEXT_TERTIARY}
-              multiline
-              maxLength={500}
-              editable={!isLoading}
-              onSubmitEditing={handleSubmitEditing}
-              returnKeyType="send"
-              blurOnSubmit={false}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
-              onPress={sendMessage}
-              disabled={!inputText.trim() || isLoading}
-            >
-              <Text style={styles.sendButtonText}>➤</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </View>
+        {/* Input */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.inputContainer}
+        >
+          <TextInput
+            ref={textInputRef}
+            style={styles.textInput}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Hỏi AI về quiz..."
+            placeholderTextColor={COLORS.TEXT_TERTIARY}
+            multiline
+            maxLength={500}
+            editable={!isLoading}
+            onSubmitEditing={handleSubmitEditing}
+            returnKeyType="send"
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
+            onPress={sendMessage}
+            disabled={!inputText.trim() || isLoading}
+          >
+            <Text style={styles.sendButtonText}>➤</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Animated.View>
+    </Animated.View>
   )
 }
 
@@ -269,32 +271,32 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1000,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 9999,
     justifyContent: 'flex-end',
   } as ViewStyle,
+  
   backdrop: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   } as ViewStyle,
-  keyboardAvoidingView: {
-    flex: 1,
-    justifyContent: "flex-end",
-  } as ViewStyle,
+  
   chatContainer: {
     backgroundColor: COLORS.WHITE,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    height: '70%',
+    maxHeight: 600,
     shadowColor: COLORS.BLACK,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
-    elevation: 10,
-    maxHeight: "90%",
+    elevation: 15,
   } as ViewStyle,
+  
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -306,19 +308,23 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   } as ViewStyle,
+  
   headerLeft: {
     flex: 1,
   } as ViewStyle,
+  
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: COLORS.TEXT_PRIMARY,
   } as TextStyle,
+  
   headerSubtitle: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
     marginTop: 2,
   } as TextStyle,
+  
   closeButton: {
     width: 32,
     height: 32,
@@ -327,22 +333,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   } as ViewStyle,
+  
   closeButtonText: {
     fontSize: 16,
     color: COLORS.TEXT_SECONDARY,
     fontWeight: "bold",
   } as TextStyle,
+  
   messagesContainer: {
     flex: 1,
   } as ViewStyle,
+  
   messagesContent: {
     padding: 16,
     paddingBottom: 8,
   } as ViewStyle,
+  
   messageContainer: {
     marginBottom: 12,
     maxWidth: "80%",
   } as ViewStyle,
+  
   userMessage: {
     alignSelf: "flex-end",
     backgroundColor: COLORS.PRIMARY,
@@ -350,6 +361,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
     padding: 12,
   } as ViewStyle,
+  
   assistantMessage: {
     alignSelf: "flex-start",
     backgroundColor: COLORS.GRAY + "20",
@@ -357,37 +369,46 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
     padding: 12,
   } as ViewStyle,
+  
   messageText: {
     fontSize: 16,
     lineHeight: 22,
   } as TextStyle,
+  
   userMessageText: {
     color: COLORS.WHITE,
   } as TextStyle,
+  
   assistantMessageText: {
     color: COLORS.TEXT_PRIMARY,
   } as TextStyle,
+  
   messageTime: {
     fontSize: 12,
     marginTop: 4,
   } as TextStyle,
+  
   userMessageTime: {
     color: COLORS.WHITE + "80",
     textAlign: "right",
   } as TextStyle,
+  
   assistantMessageTime: {
     color: COLORS.TEXT_TERTIARY,
   } as TextStyle,
+  
   loadingContainer: {
     flexDirection: "row",
     alignItems: "center",
   } as ViewStyle,
+  
   loadingText: {
     marginLeft: 8,
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
     fontStyle: "italic",
   } as TextStyle,
+  
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -396,6 +417,7 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.BORDER,
     backgroundColor: COLORS.WHITE,
   } as ViewStyle,
+  
   textInput: {
     flex: 1,
     borderWidth: 1,
@@ -406,7 +428,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     maxHeight: 100,
     color: COLORS.TEXT_PRIMARY,
+    backgroundColor: COLORS.WHITE,
   } as TextStyle,
+  
   sendButton: {
     marginLeft: 8,
     width: 44,
@@ -416,9 +440,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   } as ViewStyle,
+  
   sendButtonDisabled: {
     backgroundColor: COLORS.GRAY,
   } as ViewStyle,
+  
   sendButtonText: {
     color: COLORS.WHITE,
     fontSize: 18,
@@ -426,4 +452,4 @@ const styles = StyleSheet.create({
   } as TextStyle,
 })
 
-export default ChatBot
+export default QuizChatBot
