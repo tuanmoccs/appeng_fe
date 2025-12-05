@@ -49,4 +49,9 @@ export const ENDPOINTS = {
 
   // User endpoints
   USER_QUIZ_RESULTS: "/user/quiz-results",  
+
+  TWO_FACTOR_SETUP: "/2fa/enable",
+  TWO_FACTOR_CONFIRM: "/2fa/confirm",
+  TWO_FACTOR_DISABLE: "/2fa/disable",
+  TWO_FACTOR_RECOVERY_CODES: "/2fa/recovery-codes",
 }

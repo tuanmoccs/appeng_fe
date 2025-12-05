@@ -25,6 +25,8 @@ import ListeningScreen from "../screens/ListeningScreen"
 import ListeningDetailScreen from "../screens/ListeningDetailScreen"
 import VoiceChatScreen from "../screens/VoiceChatScreen"
 import OTPVerification from "../screens/OTPverification"
+import TwoFactorSettingsScreen from "../screens/TwoFactorSettingsScreen"
+import TwoFactorVerifyScreen from "../screens/TwoFactorVerifyScreen"
 
 const { width } = Dimensions.get('window')
 
@@ -34,6 +36,7 @@ type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   OTPVerification: undefined;
+  TwoFactorVerifyScreen: undefined;
 }
 
 type MainStackParamList = {
@@ -50,6 +53,7 @@ type MainStackParamList = {
   QuizDetail: { quizId?: string };
   Profile: undefined;
   VoiceChatbot: undefined;
+  TwoFactorSetting: undefined;
 }
 
 type MainStackNavigationProp = StackNavigationProp<MainStackParamList>
@@ -73,7 +77,9 @@ const AuthStackNavigator = () => {
             headerShown: true 
           }}
         />
+        <AuthStack.Screen name="TwoFactorVerifyScreen" component = {TwoFactorVerifyScreen} />
     </AuthStack.Navigator>
+    
   )
 }
 
@@ -100,6 +106,7 @@ const MenuModal = ({ visible, onClose }: MenuModalProps) => {
     { name: "Quizzes", title: "✏️ Quizzes", screen: "Quizzes" },
     { name: "VoiceChatbot", title: "🎙️ VoiceChatbot", screen: "VoiceChatbot" },
     { name: "Profile", title: "👤 Profile", screen: "Profile" },
+    {name: "2FA", title: "2FA", screen: "TwoFactorSetting"}
   ]
 
   const handleNavigate = (screen: keyof MainStackParamList) => {
@@ -286,6 +293,14 @@ const MainStackScreen = () => {
           component={ProfileScreen} 
           options={{
             title: "My Profile",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="TwoFactorSetting" 
+          component={TwoFactorSettingsScreen} 
+          options={{
+            title: "2FA",
             headerLeft: () => <HamburgerButton />,
           }} 
         />

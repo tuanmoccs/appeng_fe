@@ -111,4 +111,78 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  warningContainer: {
+    backgroundColor: '#ffebee',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f44336',
+  },
+  warningText: {
+    color: '#c62828',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  infoContainer: {
+    backgroundColor: '#fff3e0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ff9800',
+  },
+  infoText: {
+    color: '#e65100',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  captchaContainer: {
+    height: 400,
+    marginVertical: 16,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f5f5f5',
+  },
+  captchaWebView: {
+    flex: 1,
+  },
+  closeCaptchaButton: {
+    backgroundColor: COLORS.ERROR,
+    padding: 12,
+    alignItems: 'center',
+  },
+  closeCaptchaText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  captchaButton: {
+    backgroundColor: '#2196F3',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  captchaButtonText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  captchaVerifiedContainer: {
+    backgroundColor: '#e8f5e9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  captchaVerifiedText: {
+    color: '#2e7d32',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    backgroundColor: '#ccc',
+    opacity: 0.6,
+  },
 });

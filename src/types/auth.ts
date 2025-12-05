@@ -2,6 +2,8 @@ export interface LoginCredentials {
   email: string
   password: string
   remember?: boolean
+  captcha_token?: string | null;
+  otp_code?: string | null;
 }
 
 export interface RegisterData {
@@ -21,4 +23,6 @@ export interface AuthResponse {
     updated_at: string
   }
   token: string
+  refresh_token?: string
+  expires_in?: number
 }
