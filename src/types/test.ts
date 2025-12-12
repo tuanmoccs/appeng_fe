@@ -1,12 +1,33 @@
+// src/types/test.ts
+
 export interface TestQuestion {
   id: number
-  test_id: number
   question: string
-  options: string[] | string
-  correct_answer?: string // Only available in backend
+  options: string[]
   difficulty: "easy" | "medium" | "hard"
   order: number
 }
+
+export interface TestPassage {
+  id: number
+  title?: string
+  content: string
+}
+
+export interface StandaloneSection {
+  type: "standalone"
+  order: number
+  question: TestQuestion
+}
+
+export interface PassageSection {
+  type: "passage"
+  order: number
+  passage: TestPassage
+  questions: TestQuestion[]
+}
+
+export type TestSection = StandaloneSection | PassageSection
 
 export interface Test {
   id: number
@@ -14,10 +35,10 @@ export interface Test {
   description: string
   type: "placement" | "achievement" | "practice"
   total_questions: number
-  time_limit?: number // in minutes
-  passing_score: number // percentage
+  time_limit?: number
+  passing_score: number
   is_active: boolean
-  questions?: TestQuestion[]
+  sections: TestSection[]
   created_at?: string
   updated_at?: string
 }
@@ -27,6 +48,15 @@ export interface TestAnswer {
   selected_answer: string
 }
 
+export interface DetailedQuestionResult {
+  question_id: number
+  question: string
+  options: string[]
+  user_answer: string
+  correct_answer: string
+  is_correct: boolean
+}
+
 export interface TestResult {
   test_id: number
   score: number
@@ -34,6 +64,7 @@ export interface TestResult {
   correct_answers: number
   total_questions: number
   result_id: number
+  detailed_results: DetailedQuestionResult[]
 }
 
 export interface UserTestResult {
@@ -42,10 +73,7 @@ export interface UserTestResult {
   test_id: number
   score: number
   total_questions: number
-  time_taken?: number // in seconds
   correct_answers: number
-  answers: TestAnswer[]
   passed: boolean
   created_at: string
-  updated_at: string
 }

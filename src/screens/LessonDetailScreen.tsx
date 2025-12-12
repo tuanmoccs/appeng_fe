@@ -1,338 +1,463 @@
 // src/screens/LessonDetailScreen.tsx
-import { useState, useEffect } from "react"
+import { useState, useEffect } from 'react'
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
   ActivityIndicator,
   Alert,
-  Dimensions,
-} from "react-native"
-import { COLORS } from "../constants/colors"
-import Button from "../components/Button"
-import { getLessonById, updateLessonProgress, completeLesson } from "../services/LessonService"
-import type { Lesson, LessonItem } from "../types/lesson"
-import { styles } from "../styles/LessonDetailScreen.styles"
-const { width } = Dimensions.get("window")
+  StyleSheet,
+} from 'react-native'
+import { useDispatch } from 'react-redux'
+import { getLessonById, updateLessonProgress } from '../services/LessonService'
+import type { Lesson, LessonSection, TheorySection, VocabularySection } from '../types/lesson'
+import { COLORS } from '../constants/colors'
+import { AppDispatch } from '../store/store'
 
 const LessonDetailScreen = ({ route, navigation }: any) => {
-  const { lessonId } = route.params 
+  const { lessonId } = route.params
+  const dispatch = useDispatch<AppDispatch>()
+
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentSection, setCurrentSection] = useState(0)
-  const [currentItem, setCurrentItem] = useState(0)
-  const [showMeaning, setShowMeaning] = useState(false)
-  const [completedItems, setCompletedItems] = useState<Set<string>>(new Set())
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+  const [completedSections, setCompletedSections] = useState<Set<number>>(new Set())
 
   useEffect(() => {
-    fetchLesson() // Tự động tải dữ liệu khi vào màn hình
-  }, [lessonId])
+    fetchLesson()
+  }, [])
 
   const fetchLesson = async () => {
     try {
       setLoading(true)
-      const lessonData = await getLessonById(lessonId) // Gọi API lấy chi tiết bài học
+      const lessonData = await getLessonById(lessonId)
       setLesson(lessonData)
-      // Khôi phục vị trí học cuối cùng 
-      setCurrentSection(lessonData.current_section || 0)
-      setCurrentItem(lessonData.current_item || 0)
+      setCurrentSectionIndex(lessonData.current_section || 0)
     } catch (error: any) {
-      Alert.alert("Lỗi", "Không thể tải bài học")
+      Alert.alert('Lỗi', 'Không thể tải bài học')
       navigation.goBack()
     } finally {
       setLoading(false)
     }
   }
 
-  const calculateProgress = (currentSec?: number, currentIt?: number, completedSet?: Set<string>) => {
-    // Sử dụng giá trị hiện tại nếu không có tham số truyền vào
-    const sec = currentSec !== undefined ? currentSec : currentSection;
-    const it = currentIt !== undefined ? currentIt : currentItem;
-    const completed = completedSet || completedItems;
-
+  const calculateProgress = () => {
     if (!lesson?.content?.sections) return 0
-
-    let totalItems = 0  // Tổng số mục trong bài học
-    let completedCount = 0 // Số mục đã hoàn thành
-
-    lesson.content.sections.forEach((section, sectionIndex) => {
-      section.items.forEach((item, itemIndex) => {
-        totalItems++
-
-        // Item được coi là hoàn thành nếu:
-        // 1. Đã được đánh dấu completed
-        // 2. Thuộc section đã qua
-        // 3. Thuộc section hiện tại và index <= current item
-        const itemKey = `${sectionIndex}-${itemIndex}`
-        const isInCompletedSection = sectionIndex < sec
-        const isCurrentSectionCompletedItem = sectionIndex === sec && itemIndex <= it
-        const isMarkedCompleted = completed.has(itemKey)
-
-        if (isInCompletedSection || isCurrentSectionCompletedItem || isMarkedCompleted) {
-          completedCount++
-        }
-      })
-    })
-
-    return totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0
+    const totalSections = lesson.content.sections.length
+    return Math.round((completedSections.size / totalSections) * 100)
   }
 
-  const updateProgress = async () => {
+  const handleSectionComplete = async () => {
     if (!lesson) return
 
-    const progress = calculateProgress()
+    const newCompleted = new Set(completedSections)
+    newCompleted.add(currentSectionIndex)
+    setCompletedSections(newCompleted)
+
+    const progress = Math.round((newCompleted.size / (lesson.content?.sections.length || 1)) * 100)
+
     try {
-      await updateLessonProgress(lesson.id, progress, currentSection, currentItem)
+      await updateLessonProgress(lessonId, progress, currentSectionIndex)
+
+      if (progress >= 100 && lesson.has_quiz) {
+        Alert.alert(
+          'Hoàn thành bài học!',
+          'Bạn đã hoàn thành tất cả phần học. Hãy làm quiz để mở khóa bài học tiếp theo!',
+          [
+            {
+              text: 'Làm Quiz',
+              onPress: () => navigation.navigate('LessonQuiz', { lessonId: lesson.id }),
+            },
+            { text: 'Để sau', style: 'cancel' },
+          ]
+        )
+      } else if (progress >= 100) {
+        Alert.alert('Hoàn thành!', 'Bạn đã hoàn thành bài học này!')
+      }
     } catch (error) {
-      console.error("Error updating progress:", error)
+      console.error('Error updating progress:', error)
     }
   }
 
-  const handleNextItem = () => {
+  const handleNext = () => {
     if (!lesson?.content?.sections) return
 
-    const currentSectionData = lesson.content.sections[currentSection]
-    const itemKey = `${currentSection}-${currentItem}`
-
-    // Tạo set mới với item hiện tại được đánh dấu completed
-    const newCompletedItems = new Set([...completedItems, itemKey])
-
-    let newSection = currentSection
-    let newItem = currentItem
-
-    if (currentItem < currentSectionData.items.length - 1) {
-      // Next item in current section
-      newItem = currentItem + 1
-    } else if (currentSection < lesson.content.sections.length - 1) {
-      // Next section
-      newSection = currentSection + 1
-      newItem = 0
+    if (currentSectionIndex < lesson.content.sections.length - 1) {
+      setCurrentSectionIndex(currentSectionIndex + 1)
     } else {
-      // Lesson completed - tự động hoàn thành với 100%
-      handleCompleteLesson()
-      return
-    }
-    const newProgress = calculateProgress(newSection, newItem, newCompletedItems)
-
-      // Cập nhật state
-      setCompletedItems(newCompletedItems)
-      setCurrentSection(newSection)
-      setCurrentItem(newItem)
-      setShowMeaning(false)
-
-      // Cập nhật progress lên server
-      updateProgressToServer(newProgress, newSection, newItem)
-  }
-
-  const updateProgressToServer = async (progress: number, section?: number, item?: number) => {
-    if (!lesson) return
-
-    const sec = section !== undefined ? section : currentSection
-    const it = item !== undefined ? item : currentItem
-
-    try {
-      await updateLessonProgress(lesson.id, progress, sec, it)
-    } catch (error) {
-      console.error("Error updating progress:", error)
+      handleSectionComplete()
     }
   }
 
-  const handlePreviousItem = () => {
-    if (currentItem > 0) {
-      setCurrentItem(currentItem - 1)
-    } else if (currentSection > 0) {
-      setCurrentSection(currentSection - 1)
-      const prevSectionData = lesson?.content?.sections[currentSection - 1]
-      if (prevSectionData) {
-        setCurrentItem(prevSectionData.items.length - 1)
-      }
-    }
-    setShowMeaning(false)
-    updateProgress()
-  }
-
-  const handleCompleteLesson = async () => {
-    if (!lesson) return
-
-    try {
-      const result = await completeLesson(lesson.id)
-
-      Alert.alert("🎉 Chúc mừng!", "Bạn đã hoàn thành bài học!", [
-        {
-          text: "Tiếp tục",
-          onPress: () => navigation.goBack(),
-        },
-      ])
-
-      // Show achievements if any
-      if (result.achievements && result.achievements.length > 0) {
-        setTimeout(() => {
-          result.achievements.forEach((achievement: any) => {
-            Alert.alert("🏆 Thành tích mới!", `${achievement.title}\n${achievement.description}`)
-          })
-        }, 1000)
-      }
-    } catch (error: any) {
-      Alert.alert("Lỗi", "Không thể hoàn thành bài học")
+  const handlePrevious = () => {
+    if (currentSectionIndex > 0) {
+      setCurrentSectionIndex(currentSectionIndex - 1)
     }
   }
 
-  const getCurrentItem = (): LessonItem | null => {
-    if (!lesson?.content?.sections) return null
-    const section = lesson.content.sections[currentSection]
-    return section?.items[currentItem] || null
-  }
+  const renderTheorySection = (section: TheorySection) => (
+    <View style={styles.sectionContent}>
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+      {section.image_url && (
+        <Image source={{ uri: section.image_url }} style={styles.sectionImage} resizeMode="contain" />
+      )}
+      <Text style={styles.theoryContent}>{section.content}</Text>
+      {section.examples && section.examples.length > 0 && (
+        <View style={styles.examplesContainer}>
+          <Text style={styles.examplesTitle}>Ví dụ:</Text>
+          {section.examples.map((example, index) => (
+            <View key={index} style={styles.exampleItem}>
+              <Text style={styles.exampleSentence}>{example.sentence}</Text>
+              <Text style={styles.exampleTranslation}>{example.translation}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  )
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return COLORS.SUCCESS
-      case "intermediate":
-        return COLORS.WARNING
-      case "advanced":
-        return COLORS.ERROR
-      default:
-        return COLORS.PRIMARY
-    }
-  }
-
-  const getLevelText = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "Cơ bản"
-      case "intermediate":
-        return "Trung cấp"
-      case "advanced":
-        return "Nâng cao"
-      default:
-        return "Cơ bản"
-    }
-  }
-
-  useEffect(() => {
-    if (lesson && lesson.content?.sections) {
-      // Tính toán lại progress dựa trên current position
-      const newProgress = calculateProgress()
-      if (newProgress !== lesson.progress) {
-        updateProgressToServer(newProgress)
-      }
-    }
-  }, [currentSection, currentItem, completedItems])
+  const renderVocabularySection = (section: VocabularySection) => (
+    <View style={styles.sectionContent}>
+      <Text style={styles.sectionTitle}>{section.title}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {section.items.map((item, index) => (
+          <View key={index} style={styles.vocabCard}>
+            {item.image_url && (
+              <Image source={{ uri: item.image_url }} style={styles.vocabImage} resizeMode="cover" />
+            )}
+            <View style={styles.vocabContent}>
+              <Text style={styles.vocabWord}>{item.word}</Text>
+              {item.pronunciation && <Text style={styles.vocabPronunciation}>{item.pronunciation}</Text>}
+              <Text style={styles.vocabMeaning}>{item.meaning}</Text>
+              {item.example && (
+                <View style={styles.vocabExample}>
+                  <Text style={styles.vocabExampleText}>{item.example}</Text>
+                  {item.example_translation && (
+                    <Text style={styles.vocabExampleTranslation}>{item.example_translation}</Text>
+                  )}
+                </View>
+              )}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  )
 
   if (loading) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+        <Text style={styles.loadingText}>Đang tải bài học...</Text>
       </View>
     )
   }
 
-  if (!lesson) {
+  if (!lesson || !lesson.content?.sections || lesson.content.sections.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Không tìm thấy bài học</Text>
-        <Button title="Quay lại" onPress={() => navigation.goBack()} />
+        <Text style={styles.errorText}>Không tìm thấy nội dung bài học</Text>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
+          <Text style={styles.buttonText}>Quay lại</Text>
+        </TouchableOpacity>
       </View>
     )
   }
 
-  const currentItemData = getCurrentItem()
+  const currentSection = lesson.content.sections[currentSectionIndex]
   const progress = calculateProgress()
-  const totalSections = lesson.content?.sections.length || 0
-  const totalItems = lesson.content?.sections.reduce((sum, section) => sum + section.items.length, 0) || 0
-  const currentItemNumber =
-    (lesson.content?.sections
-      ?.slice(0, currentSection)
-      .reduce((sum, section) => sum + (section.items?.length ?? 0), 0) ?? 0) +
-    currentItem +
-    1
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Quay lại</Text>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.lessonTitle}>{lesson.title}</Text>
-          <View style={[styles.levelBadge, { backgroundColor: getLevelColor(lesson.level) + "20" }]}>
-            <Text style={[styles.levelText, { color: getLevelColor(lesson.level) }]}>{getLevelText(lesson.level)}</Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progress}%` }]} />
           </View>
-        </View>
-      </View>
-
-      {/* Progress Bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressInfo}>
           <Text style={styles.progressText}>
-            {currentItemNumber}/{totalItems} • {progress}%
+            Section {currentSectionIndex + 1}/{lesson.content.sections.length} - {progress}% hoàn thành
           </Text>
-          <Text style={styles.sectionText}>
-            Phần {currentSection + 1}/{totalSections}: {lesson.content?.sections[currentSection]?.title}
-          </Text>
-        </View>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {currentItemData && (
-          <View style={styles.itemCard}>
-            <View style={styles.wordContainer}>
-              <Text style={styles.word}>{currentItemData.word}</Text>
-              <TouchableOpacity style={styles.showMeaningButton} onPress={() => setShowMeaning(!showMeaning)}>
-                <Text style={styles.showMeaningButtonText}>{showMeaning ? "Ẩn nghĩa" : "Hiện nghĩa"}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {showMeaning && (
-              <View style={styles.meaningContainer}>
-                <Text style={styles.meaning}>{currentItemData.meaning}</Text>
-              </View>
-            )}
-
-            <View style={styles.exampleContainer}>
-              <Text style={styles.exampleLabel}>Ví dụ:</Text>
-              <Text style={styles.example}>{currentItemData.example}</Text>
-            </View>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {currentSection.type === 'theory' && renderTheorySection(currentSection as TheorySection)}
+        {currentSection.type === 'vocabulary' && renderVocabularySection(currentSection as VocabularySection)}
+        {currentSection.type === 'practice' && (
+          <View style={styles.practiceSection}>
+            <Text style={styles.sectionTitle}>{currentSection.title}</Text>
+            <Text style={styles.practiceText}>Phần luyện tập được tích hợp trong Quiz</Text>
           </View>
         )}
+      </ScrollView>
 
-        {/* Navigation Buttons */}
-        <View style={styles.navigationContainer}>
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              styles.prevButton,
-              currentSection === 0 && currentItem === 0 && styles.disabledButton,
-            ]}
-            onPress={handlePreviousItem}
-            disabled={currentSection === 0 && currentItem === 0}
-          >
-            <Text
-              style={[styles.navButtonText, currentSection === 0 && currentItem === 0 && styles.disabledButtonText]}
-            >
-              ← Trước
-            </Text>
+      {/* Navigation */}
+      <View style={styles.navigation}>
+        <TouchableOpacity
+          style={[styles.navButton, currentSectionIndex === 0 && styles.disabledButton]}
+          onPress={handlePrevious}
+          disabled={currentSectionIndex === 0}
+        >
+          <Text style={styles.navButtonText}>← Trước</Text>
+        </TouchableOpacity>
+
+        {currentSectionIndex === lesson.content.sections.length - 1 ? (
+          <TouchableOpacity style={[styles.navButton, styles.completeButton]} onPress={handleSectionComplete}>
+            <Text style={styles.navButtonText}>Hoàn thành ✓</Text>
           </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.navButton} onPress={handleNext}>
+            <Text style={styles.navButtonText}>Tiếp →</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-          <TouchableOpacity style={[styles.navButton, styles.nextButton]} onPress={handleNextItem}>
-            <Text style={styles.navButtonText}>
-              {currentSection === totalSections - 1 &&
-              currentItem === (lesson.content?.sections[currentSection]?.items.length || 1) - 1
-                ? "Hoàn thành"
-                : "Tiếp theo →"}
+      {/* Quiz Button (if available) */}
+      {lesson.has_quiz && progress >= 100 && (
+        <View style={styles.quizButtonContainer}>
+          <TouchableOpacity
+            style={styles.quizButton}
+            onPress={() => navigation.navigate('LessonQuiz', { lessonId: lesson.id })}
+          >
+            <Text style={styles.quizButtonText}>
+              {lesson.quiz_passed ? '✓ Quiz đã hoàn thành' : '🎯 Làm Quiz'}
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      )}
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.WHITE,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  header: {
+    backgroundColor: COLORS.PRIMARY,
+    padding: 15,
+    paddingTop: 50,
+  },
+  backButton: {
+    marginBottom: 10,
+  },
+  backButtonText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
+  },
+  headerInfo: {
+    marginTop: 10,
+  },
+  lessonTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.WHITE,
+    marginBottom: 10,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 5,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.SUCCESS,
+  },
+  progressText: {
+    color: COLORS.WHITE,
+    fontSize: 12,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  sectionContent: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.TEXT,
+    marginBottom: 15,
+  },
+  sectionImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  theoryContent: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: COLORS.TEXT,
+    marginBottom: 15,
+  },
+  examplesContainer: {
+    backgroundColor: COLORS.BACKGROUND,
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  examplesTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: COLORS.TEXT,
+  },
+  exampleItem: {
+    marginBottom: 10,
+  },
+  exampleSentence: {
+    fontSize: 15,
+    color: COLORS.TEXT,
+    fontStyle: 'italic',
+  },
+  exampleTranslation: {
+    fontSize: 14,
+    color: COLORS.GRAY,
+    marginTop: 5,
+  },
+  vocabCard: {
+    width: 280,
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 15,
+    marginRight: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  vocabImage: {
+    width: '100%',
+    height: 150,
+  },
+  vocabContent: {
+    padding: 15,
+  },
+  vocabWord: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginBottom: 5,
+  },
+  vocabPronunciation: {
+    fontSize: 14,
+    color: COLORS.GRAY,
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  vocabMeaning: {
+    fontSize: 16,
+    color: COLORS.TEXT,
+    marginBottom: 10,
+  },
+  vocabExample: {
+    backgroundColor: COLORS.BACKGROUND,
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 5,
+  },
+  vocabExampleText: {
+    fontSize: 14,
+    color: COLORS.TEXT,
+    fontStyle: 'italic',
+  },
+  vocabExampleTranslation: {
+    fontSize: 13,
+    color: COLORS.GRAY,
+    marginTop: 5,
+  },
+  practiceSection: {
+    padding: 20,
+    backgroundColor: COLORS.BACKGROUND,
+    borderRadius: 10,
+  },
+  practiceText: {
+    fontSize: 16,
+    color: COLORS.GRAY,
+    textAlign: 'center',
+  },
+  navigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.BORDER,
+    backgroundColor: COLORS.WHITE,
+  },
+  navButton: {
+    flex: 1,
+    backgroundColor: COLORS.PRIMARY,
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  completeButton: {
+    backgroundColor: COLORS.SUCCESS,
+  },
+  disabledButton: {
+    backgroundColor: COLORS.GRAY,
+  },
+  navButtonText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  quizButtonContainer: {
+    padding: 15,
+    backgroundColor: COLORS.BACKGROUND,
+  },
+  quizButton: {
+    backgroundColor: COLORS.WARNING,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  quizButtonText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: COLORS.GRAY,
+  },
+  errorText: {
+    fontSize: 16,
+    color: COLORS.ERROR,
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: COLORS.PRIMARY,
+    padding: 15,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
+  },
+})
 
 export default LessonDetailScreen

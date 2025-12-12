@@ -27,6 +27,7 @@ import VoiceChatScreen from "../screens/VoiceChatScreen"
 import OTPVerification from "../screens/OTPverification"
 import TwoFactorSettingsScreen from "../screens/TwoFactorSettingsScreen"
 import TwoFactorVerifyScreen from "../screens/TwoFactorVerifyScreen"
+import LessonQuiz from "../screens/LessonQuizScreen"
 
 const { width } = Dimensions.get('window')
 
@@ -43,6 +44,7 @@ type MainStackParamList = {
   Home: undefined;
   Lessons: undefined;
   LessonDetail: { lessonId?: string };
+  LessonQuiz: {lessonId?: string};
   Words: undefined;
   WordDetail: { wordId?: string };
   Tests: undefined;
@@ -226,6 +228,11 @@ const MainStackScreen = () => {
         <MainStack.Screen 
           name="LessonDetail" 
           component={LessonDetailScreen} 
+          options={{ headerShown: false }} 
+        />
+        <MainStack.Screen 
+          name="LessonQuiz" 
+          component={LessonQuiz} 
           options={{ headerShown: false }} 
         />
         <MainStack.Screen 

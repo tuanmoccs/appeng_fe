@@ -19,13 +19,14 @@ export const ENDPOINTS = {
   USER_STATS: "/auth/stats",
 
   // Lesson endpoints
-  LESSONS: "/lessons",
+  LESSONS: '/lessons',
   LESSON_DETAIL: (id: number) => `/lessons/${id}`,
-  LESSON_WORDS: (id: number) => `/lessons/${id}/words`,
-  LESSON_COMPLETE: (id: number) => `/lessons/${id}/complete`,
   LESSON_PROGRESS: (id: number) => `/lessons/${id}/progress`,
-  LESSON_STATS: "/lessons/stats",
-
+  LESSON_STATS: '/lessons/stats',
+  
+  // Quiz endpoints
+  LESSON_QUIZ: (id: number) => `/lessons/${id}/quiz`,
+  LESSON_QUIZ_SUBMIT: (id: number) => `/lessons/${id}/quiz/submit`,
   // Word endpoints
   WORDS: "/words",
   WORD_DETAIL: (id: number) => `/words/${id}`,

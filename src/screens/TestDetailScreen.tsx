@@ -1,28 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  TouchableOpacity,
-  Alert,
-  BackHandler,
-  ScrollView,
-} from "react-native"
+import { View, Text, ActivityIndicator, TouchableOpacity, Alert, BackHandler, ScrollView } from "react-native"
 import { COLORS } from "../constants/colors"
 import TestQuestion from "../components/TestQuestion"
+import PassageSection from "../components/PassageSection"
+import ChatBot from "../components/ChatBot"
 import { getTestById, submitTest } from "../services/testService"
 import type { Test, TestAnswer, TestResult } from "../types/test"
 import { styles } from "../styles/TestDetailScreem.styles"
-import ChatBot from "../components/ChatBot"
 
 const TestDetailScreen = ({ route, navigation }: any) => {
-  const { testId } = route.params // Nhận ID test từ màn hình trước
+  const { testId } = route.params
 
   const [test, setTest] = useState<Test | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+  const [currentPassageQuestionIndex, setCurrentPassageQuestionIndex] = useState(0)
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({})
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,12 +32,11 @@ const TestDetailScreen = ({ route, navigation }: any) => {
 
   useEffect(() => {
     if (test?.time_limit && timeRemaining === null && !showResult) {
-      setTimeRemaining(test.time_limit * 60) 
+      setTimeRemaining(test.time_limit * 60)
     }
   }, [test])
 
   useEffect(() => {
-    // Đếm ngược
     let interval: NodeJS.Timeout | null = null
 
     if (timeRemaining !== null && timeRemaining > 0 && !showResult) {
@@ -68,14 +61,14 @@ const TestDetailScreen = ({ route, navigation }: any) => {
       setLoading(true)
       const testData = await getTestById(testId)
 
-      if (!testData || !testData.questions || testData.questions.length === 0) {
-        throw new Error("Test không có câu hỏi hoặc dữ liệu không hợp lệ")
+      if (!testData || !testData.sections || testData.sections.length === 0) {
+        throw new Error("Test không có nội dung hoặc dữ liệu không hợp lệ")
       }
 
       console.log("✅ Test loaded successfully:", {
         id: testData.id,
         title: testData.title,
-        questionsCount: testData.questions.length,
+        sectionsCount: testData.sections.length,
       })
 
       setTest(testData)
@@ -113,28 +106,44 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     }))
   }
 
-  const handlePreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1)
+  const handlePreviousSection = () => {
+    if (currentSectionIndex > 0) {
+      setCurrentSectionIndex(currentSectionIndex - 1)
+      setCurrentPassageQuestionIndex(0)
     }
   }
 
-  const handleNextQuestion = () => {
-    if (test?.questions && currentQuestionIndex < test.questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
+  const handleNextSection = () => {
+    if (test?.sections && currentSectionIndex < test.sections.length - 1) {
+      setCurrentSectionIndex(currentSectionIndex + 1)
+      setCurrentPassageQuestionIndex(0)
     }
+  }
+
+  const getTotalQuestions = () => {
+    if (!test?.sections) return 0
+    return test.sections.reduce((total, section) => {
+      if (section.type === "standalone") {
+        return total + 1
+      } else {
+        return total + section.questions.length
+      }
+    }, 0)
   }
 
   const handleSubmitTest = async () => {
-    if (!test?.questions) return
+    const totalQuestions = getTotalQuestions()
+    const answeredCount = Object.keys(userAnswers).length
 
-    // Kiểm tra xem tất cả các câu hỏi đã được trả lời chưa
-    const unansweredQuestions = test.questions.filter((q) => !userAnswers[q.id])
-
-    if (unansweredQuestions.length > 0) {
-      Alert.alert("Vui lòng trả lời tất cả câu hỏi trước khi nộp bài.", `Bạn còn ${unansweredQuestions.length} câu chưa trả lời.`, [
-        { text: "Ok", style: "cancel" },
-      ])
+    if (answeredCount < totalQuestions) {
+      Alert.alert(
+        "Chưa hoàn thành",
+        `Bạn còn ${totalQuestions - answeredCount} câu chưa trả lời. Bạn có chắc muốn nộp bài?`,
+        [
+          { text: "Hủy", style: "cancel" },
+          { text: "Nộp bài", onPress: submitAnswers },
+        ],
+      )
     } else {
       Alert.alert("Nộp bài", "Bạn có chắc chắn muốn nộp bài?", [
         { text: "Hủy", style: "cancel" },
@@ -144,21 +153,35 @@ const TestDetailScreen = ({ route, navigation }: any) => {
   }
 
   const submitAnswers = async () => {
-    if (!test?.questions) return
+    if (!test?.sections) return
 
     try {
       setIsSubmitting(true)
 
-      // Chuyển đổi đáp án thành format server yêu cầu
-      const answers: TestAnswer[] = test.questions.map((question) => ({
-        question_id: question.id,
-        selected_answer: userAnswers[question.id] || "",
+      const allQuestions: number[] = []
+      test.sections.forEach((section) => {
+        if (section.type === "standalone") {
+          allQuestions.push(section.question.id)
+        } else {
+          section.questions.forEach((q) => allQuestions.push(q.id))
+        }
+      })
+
+      const answers: TestAnswer[] = allQuestions.map((questionId) => ({
+        question_id: questionId,
+        selected_answer: userAnswers[questionId] || "",
       }))
 
+      console.log("[v0] Submitting answers:", answers)
+
       const result = await submitTest(testId, answers)
+
+      console.log("[v0] Received result:", result)
+
       setTestResult(result)
       setShowResult(true)
     } catch (error: any) {
+      console.error("[v0] Submit error:", error)
       Alert.alert("Lỗi", error.message || "Không thể nộp bài test")
     } finally {
       setIsSubmitting(false)
@@ -171,9 +194,14 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const getProgressPercentage = () => {
-    if (!test?.questions) return 0
-    return (Object.keys(userAnswers).length / test.questions.length) * 100
+  const getCurrentQuestionId = (): number | undefined => {
+    if (!test) return undefined
+    const currentSection = test.sections[currentSectionIndex]
+    if (currentSection.type === "standalone") {
+      return currentSection.question.id
+    } else {
+      return currentSection.questions[currentPassageQuestionIndex]?.id
+    }
   }
 
   if (loading) {
@@ -185,7 +213,7 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     )
   }
 
-  if (!test || !test.questions) {
+  if (!test || !test.sections) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Không tìm thấy test</Text>
@@ -241,19 +269,9 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     )
   }
 
-  const currentQuestion = test.questions?.[currentQuestionIndex]
-  const isLastQuestion = currentQuestionIndex === test.questions.length - 1
-  const isFirstQuestion = currentQuestionIndex === 0
-
-  // Add safety check for currentQuestion
-  if (!currentQuestion) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={COLORS.PRIMARY} />
-        <Text style={styles.loadingText}>Đang tải câu hỏi...</Text>
-      </View>
-    )
-  }
+  const currentSection = test.sections[currentSectionIndex]
+  const isLastSection = currentSectionIndex === test.sections.length - 1
+  const isFirstSection = currentSectionIndex === 0
 
   return (
     <View style={styles.container}>
@@ -266,16 +284,12 @@ const TestDetailScreen = ({ route, navigation }: any) => {
         <View style={styles.headerInfo}>
           <Text style={styles.testTitle}>{test.title}</Text>
           {timeRemaining !== null && (
-            <Text
-              style={[
-                styles.timer,
-                timeRemaining < 300 ? styles.timerWarning : null, // Warning when < 5 minutes
-              ]}
-            >
+            <Text style={[styles.timer, timeRemaining < 300 ? styles.timerWarning : null]}>
               ⏱️ {formatTime(timeRemaining)}
             </Text>
           )}
         </View>
+
         <TouchableOpacity style={styles.chatBotButton} onPress={() => setShowChatBot(true)}>
           <Text style={styles.chatBotButtonText}>🤖</Text>
         </TouchableOpacity>
@@ -285,42 +299,48 @@ const TestDetailScreen = ({ route, navigation }: any) => {
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
           <View
-            style={[styles.progressFill, { width: `${((currentQuestionIndex + 1) / test.questions.length) * 100}%` }]}
+            style={[styles.progressFill, { width: `${((currentSectionIndex + 1) / test.sections.length) * 100}%` }]}
           />
         </View>
         <Text style={styles.progressText}>
-          Câu {currentQuestionIndex + 1} / {test.questions.length} • {Object.keys(userAnswers).length} đã trả lời
+          Phần {currentSectionIndex + 1} / {test.sections.length} • {Object.keys(userAnswers).length} đã trả lời
         </Text>
       </View>
-      <ChatBot
-      testData={test}
-      currentQuestionId={currentQuestion?.id}
-      isVisible={showChatBot}
-      onClose={() => setShowChatBot(false)}
-      /> 
-      {/* Question */}
-      <View style={styles.questionContainer}>
-        <TestQuestion
-          question={currentQuestion.question}
-          options={currentQuestion.options}
-          selectedOption={userAnswers[currentQuestion.id]}
-          onSelectOption={(answer) => handleSelectAnswer(currentQuestion.id, answer)}
-          questionNumber={currentQuestionIndex + 1}
-          totalQuestions={test.questions.length}
-        />
+
+      {/* Content */}
+      <View style={styles.container}>
+        {currentSection.type === "standalone" ? (
+          <TestQuestion
+            question={currentSection.question.question}
+            options={currentSection.question.options}
+            selectedOption={userAnswers[currentSection.question.id]}
+            onSelectOption={(answer) => handleSelectAnswer(currentSection.question.id, answer)}
+            questionNumber={currentSectionIndex + 1}
+            totalQuestions={test.sections.length}
+          />
+        ) : (
+          <PassageSection
+            passage={currentSection.passage}
+            questions={currentSection.questions}
+            currentQuestionIndex={currentPassageQuestionIndex}
+            onSelectQuestion={setCurrentPassageQuestionIndex}
+            userAnswers={userAnswers}
+            onSelectAnswer={handleSelectAnswer}
+          />
+        )}
       </View>
 
       {/* Navigation */}
       <View style={styles.navigationContainer}>
         <TouchableOpacity
-          style={[styles.navButton, styles.prevButton, isFirstQuestion && styles.disabledButton]}
-          onPress={handlePreviousQuestion}
-          disabled={isFirstQuestion}
+          style={[styles.navButton, styles.prevButton, isFirstSection && styles.disabledButton]}
+          onPress={handlePreviousSection}
+          disabled={isFirstSection}
         >
-          <Text style={[styles.navButtonText, isFirstQuestion && styles.disabledButtonText]}>← Câu trước</Text>
+          <Text style={[styles.navButtonText, isFirstSection && styles.disabledButtonText]}>← Trước</Text>
         </TouchableOpacity>
 
-        {isLastQuestion ? (
+        {isLastSection ? (
           <TouchableOpacity
             style={[styles.navButton, styles.submitButton]}
             onPress={handleSubmitTest}
@@ -333,12 +353,23 @@ const TestDetailScreen = ({ route, navigation }: any) => {
             )}
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={[styles.navButton, styles.nextButton]} onPress={handleNextQuestion}>
-            <Text style={styles.navButtonText}>Câu sau →</Text>
+          <TouchableOpacity style={[styles.navButton, styles.nextButton]} onPress={handleNextSection}>
+            <Text style={styles.navButtonText}>Tiếp →</Text>
           </TouchableOpacity>
         )}
       </View>
+
+      {/* ChatBot */}
+      {test && (
+        <ChatBot
+          testData={test}
+          currentQuestionId={getCurrentQuestionId()}
+          isVisible={showChatBot}
+          onClose={() => setShowChatBot(false)}
+        />
+      )}
     </View>
   )
 }
+
 export default TestDetailScreen

@@ -15,6 +15,7 @@ export const COLORS = {
   TEXT_PRIMARY: "#212529",
   TEXT_SECONDARY: "#495057",
   TEXT_TERTIARY: "#868E96",
+  TEXT: "#495057",
 
   // Status colors
   SUCCESS: "#37B24D",

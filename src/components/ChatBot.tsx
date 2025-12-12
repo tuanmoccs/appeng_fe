@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import {
@@ -11,8 +13,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  ViewStyle,
-  TextStyle,
+  type ViewStyle,
+  type TextStyle,
   Keyboard,
   Dimensions,
 } from "react-native"
@@ -43,7 +45,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ testData, currentQuestionId, isVisibl
   const slideAnim = useRef(new Animated.Value(300)).current
   const textInputRef = useRef<TextInput>(null)
 
-  const screenHeight = Dimensions.get('window').height
+  const screenHeight = Dimensions.get("window").height
   const baseHeight = screenHeight * 0.7
 
   useEffect(() => {
@@ -77,12 +79,12 @@ const ChatBot: React.FC<ChatBotProps> = ({ testData, currentQuestionId, isVisibl
 
   useEffect(() => {
     // Keyboard listeners
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", (e) => {
       setKeyboardHeight(e.endCoordinates.height)
       setIsKeyboardVisible(true)
     })
 
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardHeight(0)
       setIsKeyboardVisible(false)
     })
@@ -187,18 +189,18 @@ const ChatBot: React.FC<ChatBotProps> = ({ testData, currentQuestionId, isVisibl
     <View style={styles.overlay}>
       <TouchableOpacity style={styles.backdrop} onPress={onClose} />
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardAvoidingView}
       >
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.chatContainer, 
-            { 
+            styles.chatContainer,
+            {
               transform: [{ translateY: slideAnim }],
               height: baseHeight,
-              marginBottom: isKeyboardVisible ? (Platform.OS === 'ios' ? 0 : keyboardHeight * 0.3) : 0
-            }
+              marginBottom: isKeyboardVisible ? (Platform.OS === "ios" ? 0 : keyboardHeight * 0.3) : 0,
+            },
           ]}
         >
           {/* Header */}
@@ -271,7 +273,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 1000,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   } as ViewStyle,
   backdrop: {
     position: "absolute",
