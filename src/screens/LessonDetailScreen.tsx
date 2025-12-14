@@ -56,7 +56,8 @@ const LessonDetailScreen = ({ route, navigation }: any) => {
     newCompleted.add(currentSectionIndex)
     setCompletedSections(newCompleted)
 
-    const progress = Math.round((newCompleted.size / (lesson.content?.sections.length || 1)) * 100)
+    // const progress = Math.round((newCompleted.size / (lesson.content?.sections.length || 1)) * 100)
+    const progress = 100;
 
     try {
       await updateLessonProgress(lessonId, progress, currentSectionIndex)
@@ -81,7 +82,8 @@ const LessonDetailScreen = ({ route, navigation }: any) => {
     }
   }
 
-  const handleNext = () => {
+   const handleNext = () => {
+  
     if (!lesson?.content?.sections) return
 
     if (currentSectionIndex < lesson.content.sections.length - 1) {

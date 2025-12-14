@@ -12,6 +12,10 @@ export const styles = StyleSheet.create({
     backgroundColor: COLORS.BACKGROUND,
     padding: 20,
   },
+  passagesContainer: {
+    flex: 1,
+    backgroundColor: COLORS.BACKGROUND
+  },
   loadingText: {
     marginTop: 16,
     fontSize: 16,

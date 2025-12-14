@@ -25,19 +25,27 @@ const PassageSection: React.FC<PassageSectionProps> = ({
   const currentQuestion = questions[currentQuestionIndex]
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={true}
+      nestedScrollEnabled
+    >
       {/* Passage Content */}
       <View style={styles.passageContainer}>
         {passage.title && <Text style={styles.passageTitle}>{passage.title}</Text>}
-        <ScrollView style={styles.passageScroll} nestedScrollEnabled>
-          <Text style={styles.passageContent}>{passage.content}</Text>
-        </ScrollView>
+        <Text style={styles.passageContent}>{passage.content}</Text>
       </View>
 
       {/* Question Navigation */}
       <View style={styles.questionNav}>
         <Text style={styles.questionNavTitle}>Câu hỏi cho bài đọc này:</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.questionNavScroll}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          style={styles.questionNavScroll}
+          nestedScrollEnabled
+        >
           {questions.map((q, index) => (
             <TouchableOpacity
               key={q.id}
@@ -87,13 +95,13 @@ const PassageSection: React.FC<PassageSectionProps> = ({
           })}
         </View>
 
-        <View style={styles.difficultyBadge}>
+        {/* <View style={styles.difficultyBadge}>
           <Text style={styles.difficultyText}>
             Độ khó: {currentQuestion.difficulty === "easy" ? "Dễ" : currentQuestion.difficulty === "medium" ? "TB" : "Khó"}
           </Text>
-        </View>
+        </View> */}
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
@@ -101,133 +109,159 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20, // Thêm padding để scroll thoải mái
+  },
+  
   passageContainer: {
-    backgroundColor: COLORS.LIGHT_GRAY,
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
-    maxHeight: 250,
+    padding: 16,
+    backgroundColor: COLORS.WHITE,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.BORDER,
   },
+  
   passageTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 10,
+    marginBottom: 12,
+    color: COLORS.TEXT,
   },
-  passageScroll: {
-    maxHeight: 200,
-  },
+  
   passageContent: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: COLORS.TEXT_SECONDARY,
+    fontSize: 16,
+    lineHeight: 24,
+    color: COLORS.TEXT,
   },
+  
   questionNav: {
-    marginBottom: 15,
+    padding: 16,
+    backgroundColor: COLORS.BACKGROUND,
   },
+  
   questionNavTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
     marginBottom: 8,
+    color: COLORS.TEXT_SECONDARY,
   },
+  
   questionNavScroll: {
-    flexDirection: "row",
+    flexGrow: 0,
   },
+  
   questionNavButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: COLORS.WHITE,
-    borderWidth: 2,
-    borderColor: COLORS.BORDER,
-    alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
+    alignItems: "center",
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
   },
+  
   questionNavButtonActive: {
+    backgroundColor: COLORS.PRIMARY,
     borderColor: COLORS.PRIMARY,
-    backgroundColor: COLORS.PRIMARY + "20",
   },
+  
   questionNavButtonAnswered: {
     backgroundColor: COLORS.SUCCESS + "20",
     borderColor: COLORS.SUCCESS,
   },
+  
   questionNavButtonText: {
     fontSize: 14,
     fontWeight: "600",
-    color: COLORS.TEXT_SECONDARY,
+    color: COLORS.TEXT,
   },
+  
   questionNavButtonTextActive: {
-    color: COLORS.PRIMARY,
+    color: COLORS.WHITE,
   },
+  
   questionContainer: {
-    flex: 1,
+    padding: 16,
+    backgroundColor: COLORS.WHITE,
   },
+  
   questionText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 20,
+    marginBottom: 16,
+    color: COLORS.TEXT,
     lineHeight: 24,
   },
+  
   optionsContainer: {
     gap: 12,
   },
+  
   optionButton: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: 15,
+    alignItems: "flex-start",
+    padding: 12,
     backgroundColor: COLORS.WHITE,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: COLORS.BORDER,
   },
+  
   optionButtonSelected: {
-    borderColor: COLORS.PRIMARY,
     backgroundColor: COLORS.PRIMARY + "10",
+    borderColor: COLORS.PRIMARY,
   },
+  
   optionRadio: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: COLORS.BORDER,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
+    marginTop: 2,
   },
+  
   optionRadioSelected: {
     borderColor: COLORS.PRIMARY,
   },
+  
   optionRadioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: COLORS.PRIMARY,
   },
+  
   optionText: {
     flex: 1,
     fontSize: 15,
-    color: COLORS.TEXT_SECONDARY,
+    color: COLORS.TEXT,
     lineHeight: 22,
   },
+  
   optionTextSelected: {
     color: COLORS.PRIMARY,
-    fontWeight: "600",
+    fontWeight: "500",
   },
+  
   difficultyBadge: {
     alignSelf: "flex-start",
-    marginTop: 15,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: COLORS.INFO + "20",
+    backgroundColor: COLORS.BACKGROUND,
     borderRadius: 12,
+    marginTop: 16,
   },
+  
   difficultyText: {
     fontSize: 12,
-    color: COLORS.INFO,
-    fontWeight: "600",
+    color: COLORS.TEXT_SECONDARY,
   },
 })
 

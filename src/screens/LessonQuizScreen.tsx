@@ -192,9 +192,14 @@ const LessonQuizScreen = ({ route, navigation }: any) => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Không tìm thấy quiz</Text>
-        <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-          <Text style={styles.buttonText}>Quay lại</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+            style={styles.button}
+            onPress={() =>
+              navigation.goBack()
+            }
+          >
+            <Text style={styles.buttonText}>Quay lại</Text>
+          </TouchableOpacity>
       </View>
     )
   }
@@ -245,7 +250,7 @@ const LessonQuizScreen = ({ route, navigation }: any) => {
         )}
 
         <View style={styles.resultActions}>
-          <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={() => navigation.navigate('Lessons')}>
             <Text style={styles.buttonText}>Quay lại</Text>
           </TouchableOpacity>
           {!result.is_passed && (

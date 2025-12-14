@@ -308,7 +308,7 @@ const TestDetailScreen = ({ route, navigation }: any) => {
       </View>
 
       {/* Content */}
-      <View style={styles.container}>
+      <View style={styles.passagesContainer}>
         {currentSection.type === "standalone" ? (
           <TestQuestion
             question={currentSection.question.question}
