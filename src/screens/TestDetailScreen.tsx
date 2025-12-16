@@ -204,6 +204,15 @@ const TestDetailScreen = ({ route, navigation }: any) => {
     }
   }
 
+  const handleViewReview = () => {
+    if (testResult && test) {
+      navigation.navigate("TestReview", {
+        testResult,
+        testTitle: test.title,
+      })
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -261,6 +270,9 @@ const TestDetailScreen = ({ route, navigation }: any) => {
         </View>
 
         <View style={styles.resultActions}>
+          <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={handleViewReview}>
+            <Text style={styles.buttonText}>Xem lại đáp án</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.primaryButton]} onPress={() => navigation.goBack()}>
             <Text style={styles.buttonText}>Quay lại danh sách</Text>
           </TouchableOpacity>

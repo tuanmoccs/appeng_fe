@@ -1,22 +1,28 @@
 // src/screens/QuizDetailScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS } from '../constants/colors';
 import Button from '../components/Button';
 import QuizQuestion from '../components/QuizQuestion';
-import { fetchQuizById, submitQuiz, setUserAnswer, clearUserAnswers, clearQuizResult } from '../store/slices/quizSlice';
+import { 
+  fetchQuizById, 
+  submitQuiz, 
+  setUserAnswer, 
+  clearUserAnswers, 
+  clearQuizResult 
+} from '../store/slices/quizSlice';
 import type { RootState, AppDispatch } from '../store/store';
 import { styles } from '../styles/QuizDetailScreen.styles';
-// SỬA IMPORT NÀY
-import QuizChatBot from '../components/ChatBotQuiz'; // Đổi từ ChatBotQuiz thành QuizChatBot
+import QuizChatBot from '../components/ChatBotQuiz';
 
 const QuizDetailScreen = ({ route, navigation }: any) => {
   const { quizId } = route.params;
   const dispatch = useDispatch<AppDispatch>();
-  const { currentQuiz, userAnswers, quizResult, isLoading, error } = useSelector((state: RootState) => state.quiz);
-  const [showResults, setShowResults] = useState(false);
-  const [showChatBot, setShowChatBot] = useState(false)
+  const { currentQuiz, userAnswers, quizResult, isLoading, error } = useSelector(
+    (state: RootState) => state.quiz
+  );
+  const [showChatBot, setShowChatBot] = useState(false);
   
   useEffect(() => {
     dispatch(fetchQuizById(quizId));
@@ -36,26 +42,24 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
   const handleSubmitQuiz = () => {
     dispatch(submitQuiz({ quizId, answers: userAnswers }))
       .unwrap()
-      .then(() => {
-        setShowResults(true);
+      .then((result) => {
+        // NAVIGATE ĐẾN REVIEW SCREEN
+        navigation.navigate('QuizReview', {
+          quiz: currentQuiz,
+          result: result,
+          userAnswers: userAnswers,
+        });
+      })
+      .catch((err) => {
+        console.error('Submit quiz error:', err);
       });
-  };
-
-  const handleRetry = () => {
-    dispatch(clearUserAnswers());
-    dispatch(clearQuizResult());
-    setShowResults(false);
-    dispatch(fetchQuizById(quizId));
   };
 
   const handleBackToQuizzes = () => {
     navigation.goBack();
   };
 
-  // THÊM CONSOLE.LOG ĐỂ DEBUG
-  console.log('showChatBot:', showChatBot);
-
-  if (isLoading && !quizResult) {
+  if (isLoading && !currentQuiz) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.PRIMARY} />
@@ -67,7 +71,12 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <Button title="Go Back" onPress={handleBackToQuizzes} type="primary" style={styles.button} />
+        <Button 
+          title="Go Back" 
+          onPress={handleBackToQuizzes} 
+          type="primary" 
+          style={styles.button} 
+        />
       </View>
     );
   }
@@ -76,97 +85,71 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>Quiz not found</Text>
-        <Button title="Go Back" onPress={handleBackToQuizzes} type="primary" style={styles.button} />
+        <Button 
+          title="Go Back" 
+          onPress={handleBackToQuizzes} 
+          type="primary" 
+          style={styles.button} 
+        />
       </View>
     );
   }
 
-  if (showResults && quizResult) {
-    return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.resultHeader}>
-          <Text style={styles.resultTitle}>Quiz Results</Text>
-          <Text style={styles.resultScore}>
-            Score: {quizResult.score}/{quizResult.total_questions} ({quizResult.percentage.toFixed(0)}%)
-          </Text>
-          <Text style={[
-            styles.resultStatus,
-            quizResult.passed ? styles.passedText : styles.failedText
-          ]}>
-            {quizResult.passed ? 'PASSED' : 'FAILED'}
-          </Text>
-        </View>
-
-        <View style={styles.resultDetails}>
-          <Text style={styles.resultDetailsTitle}>Questions Review:</Text>
-          
-          {currentQuiz.questions?.map((question) => {
-            const isCorrect = quizResult.correct_answers.includes(question.id);
-            const userAnswer = userAnswers[question.id];
-            const correctAnswer = quizResult.incorrect_answers.find(
-              item => item.question_id === question.id
-            )?.correct_answer || userAnswer;
-            
-            return (
-              <View key={question.id} style={styles.questionReview}>
-                <Text style={styles.questionText}>{question.question}</Text>
-                <Text style={styles.answerText}>
-                  Your answer: <Text style={isCorrect ? styles.correctText : styles.incorrectText}>
-                    {userAnswer || 'Not answered'}
-                  </Text>
-                </Text>
-                {!isCorrect && (
-                  <Text style={styles.answerText}>
-                    Correct answer: <Text style={styles.correctText}>{correctAnswer}</Text>
-                  </Text>
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <Button title="Try Again" onPress={handleRetry} type="primary" style={styles.button} />
-          <Button title="Back to Quizzes" onPress={handleBackToQuizzes} type="outline" style={styles.button} />
-        </View>
-      </ScrollView>
-    );
-  }
-
   return (
-    <View style={{ flex: 1 }}> {/* THÊM CONTAINER CHÍNH */}
+    <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <Text style={styles.title}>{currentQuiz.title}</Text>
         <Text style={styles.description}>{currentQuiz.description}</Text>
         
-        {/* SỬA BUTTON CHATBOT */}
+        {/* CHATBOT BUTTON */}
         <TouchableOpacity 
-          style={chatBotButtonStyles.chatBotButton} 
-          onPress={() => {
-            console.log('ChatBot button pressed!'); // DEBUG
-            setShowChatBot(true);
-          }}
+          style={styles.chatBotButton} 
+          onPress={() => setShowChatBot(true)}
         >
-          <Text style={chatBotButtonStyles.chatBotButtonText}>🤖</Text>
+          <Text style={styles.chatBotButtonText}>🤖</Text>
         </TouchableOpacity>
 
-        {currentQuiz.questions?.map((question) => (
-          <QuizQuestion
-            key={question.id}
-            question={question.question}
-            options={question.options}
-            selectedOption={userAnswers[question.id]}
-            onSelectOption={(answer) => handleSelectAnswer(question.id, answer)}
-          />
+        {/* PROGRESS INDICATOR */}
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            Progress: {Object.keys(userAnswers).length} / {currentQuiz.questions?.length || 0}
+          </Text>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressFill, 
+                { 
+                  width: `${(Object.keys(userAnswers).length / (currentQuiz.questions?.length || 1)) * 100}%` 
+                }
+              ]} 
+            />
+          </View>
+        </View>
+
+        {/* QUESTIONS */}
+        {currentQuiz.questions?.map((question, index) => (
+          <View key={question.id} style={styles.questionWrapper}>
+            <Text style={styles.questionNumber}>Question {index + 1}</Text>
+            <QuizQuestion
+              question={question.question}
+              options={question.options}
+              selectedOption={userAnswers[question.id]}
+              onSelectOption={(answer) => handleSelectAnswer(question.id, answer)}
+            />
+          </View>
         ))}
 
+        {/* BUTTONS */}
         <View style={styles.buttonContainer}>
           <Button
-            title="Submit Quiz"
+            title={isLoading ? "Submitting..." : "Submit Quiz"}
             onPress={handleSubmitQuiz}
             type="primary"
             style={styles.button}
-            disabled={isLoading || Object.keys(userAnswers).length === 0}
+            disabled={
+              isLoading || 
+              Object.keys(userAnswers).length !== currentQuiz.questions?.length
+            }
           />
           <Button
             title="Cancel"
@@ -177,7 +160,7 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
         </View>
       </ScrollView>
 
-      {/* RENDER CHATBOT BÊN NGOÀI SCROLLVIEW */}
+      {/* CHATBOT MODAL */}
       <QuizChatBot
         quizData={{
           ...currentQuiz,
@@ -188,37 +171,10 @@ const QuizDetailScreen = ({ route, navigation }: any) => {
         }}
         currentQuestionId={undefined}
         isVisible={showChatBot}
-        onClose={() => {
-          console.log('ChatBot close pressed!'); // DEBUG
-          setShowChatBot(false);
-        }}
+        onClose={() => setShowChatBot(false)}
       />
     </View>
   );
 };
-
-// STYLE CHO BUTTON CHATBOT
-const chatBotButtonStyles = StyleSheet.create({
-  chatBotButton: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.PRIMARY,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    zIndex: 10,
-  },
-  chatBotButtonText: {
-    fontSize: 24,
-  },
-});
 
 export default QuizDetailScreen;

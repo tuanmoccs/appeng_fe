@@ -1,9 +1,10 @@
 // src/screens/QuizScreen.tsx
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { COLORS } from '../constants/colors';
 import Button from '../components/Button';
+import QuizStatsCard from '../components/QuizStatsCard';
 import { fetchQuizzes } from '../store/slices/quizSlice';
 import type { RootState, AppDispatch } from '../store/store';
 import type { Quiz } from '../types/quiz';
@@ -16,6 +17,15 @@ const QuizScreen = ({ navigation }: any) => {
   useEffect(() => {
     dispatch(fetchQuizzes());
   }, [dispatch]);
+
+  // Refresh khi quay lại từ màn khác
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      dispatch(fetchQuizzes());
+    });
+
+    return unsubscribe;
+  }, [navigation, dispatch]);
 
   const handleQuizPress = (quiz: Quiz) => {
     navigation.navigate('QuizDetail', { quizId: quiz.id });
@@ -33,7 +43,12 @@ const QuizScreen = ({ navigation }: any) => {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
-        <Button title="Try Again" onPress={() => dispatch(fetchQuizzes())} type="primary" style={styles.button} />
+        <Button 
+          title="Try Again" 
+          onPress={() => dispatch(fetchQuizzes())} 
+          type="primary" 
+          style={styles.button} 
+        />
       </View>
     );
   }
@@ -52,15 +67,36 @@ const QuizScreen = ({ navigation }: any) => {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={styles.quizCard}>
-              <Text style={styles.quizTitle}>{item.title}</Text>
+              <View style={styles.quizHeader}>
+                <Text style={styles.quizTitle}>{item.title}</Text>
+                {/* {item.lesson && (
+                  <Text style={styles.lessonBadge}>
+                    {item.lesson.title}
+                  </Text>
+                )} */}
+              </View>
+              
               <Text style={styles.quizDescription}>{item.description}</Text>
-              <Button title="Start Quiz" onPress={() => handleQuizPress(item)} style={styles.button} />
+              
+              {/* HIỂN THỊ STATS CARD NẾU CÓ KẾT QUẢ */}
+              {item.user_latest_result && (
+                <QuizStatsCard latestResult={item.user_latest_result} />
+              )}
+
+              <Button 
+                title={item.user_latest_result ? "🔄 Retry Quiz" : "▶️ Start Quiz"} 
+                onPress={() => handleQuizPress(item)} 
+                type={item.user_latest_result ? "outline" : "primary"}
+                style={styles.button} 
+              />
             </View>
           )}
           contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
   );
 };
+
 export default QuizScreen;

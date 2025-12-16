@@ -132,6 +132,9 @@ export const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: COLORS.PRIMARY,
   },
+  secondaryButton: {
+    backgroundColor: COLORS.SECONDARY,
+  },
   buttonText: {
     color: COLORS.WHITE,
     fontSize: 16,

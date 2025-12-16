@@ -127,5 +127,43 @@ export const styles = StyleSheet.create({
   },
   chatBotButtonText : {
     fontSize: 20,
-  }
+  },
+
+  
+  // PROGRESS INDICATOR
+  progressContainer: {
+    backgroundColor: COLORS.CARD_BACKGROUND,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+  },
+  progressText: {
+    fontSize: 14,
+    color: COLORS.TEXT,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: COLORS.LIGHT_GRAY || '#e0e0e0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: COLORS.PRIMARY,
+    borderRadius: 4,
+  },
+  
+  // QUESTIONS
+  questionWrapper: {
+    marginBottom: 24,
+  },
+  questionNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.PRIMARY,
+    marginBottom: 8,
+  },
+  
 });

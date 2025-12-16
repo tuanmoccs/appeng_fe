@@ -1,4 +1,4 @@
-// src/constants/apiEndpoints.ts
+ // src/constants/apiEndpoints.ts
 // Base API URL - Update to your actual backend URL
 export const API_BASE_URL = "http://10.0.2.2:8000/api" // 10.0.2.2 points to host machine's localhost from Android emulator
 export const API_STORAGE = "http://10.0.2.2:8000/storage"

@@ -62,4 +62,19 @@ export const styles = StyleSheet.create({
   button: {
     alignSelf: 'flex-start',
   },
+  quizHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  lessonBadge: {
+    backgroundColor: COLORS.PRIMARY,
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
 });

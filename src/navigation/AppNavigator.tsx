@@ -28,6 +28,10 @@ import OTPVerification from "../screens/OTPverification"
 import TwoFactorSettingsScreen from "../screens/TwoFactorSettingsScreen"
 import TwoFactorVerifyScreen from "../screens/TwoFactorVerifyScreen"
 import LessonQuiz from "../screens/LessonQuizScreen"
+import ChatListScreen from "../screens/ChatListScreen"
+import ChatDetailScreen from "../screens/ChatDetailScreen"
+import TestReviewScreen from "../screens/TestReviewScreen"
+import QuizReviewScreen from "../screens/QuizReviewScreen"
 
 const { width } = Dimensions.get('window')
 
@@ -49,6 +53,7 @@ type MainStackParamList = {
   WordDetail: { wordId?: string };
   Tests: undefined;
   TestDetail: { testId?: string };
+  TestReview: {testResult: any; testTitle: string};
   Listenings: undefined;
   ListeningDetail: { listeningId?: string };
   Quizzes: undefined;
@@ -56,6 +61,13 @@ type MainStackParamList = {
   Profile: undefined;
   VoiceChatbot: undefined;
   TwoFactorSetting: undefined;
+  ChatList : undefined;
+  ChatDetail: {conversionId?:string, admin?:string};
+  QuizReview: {
+    quiz: any;
+    result: any;
+    userAnswers: any;
+  };
 }
 
 type MainStackNavigationProp = StackNavigationProp<MainStackParamList>
@@ -108,7 +120,8 @@ const MenuModal = ({ visible, onClose }: MenuModalProps) => {
     { name: "Quizzes", title: "✏️ Quizzes", screen: "Quizzes" },
     { name: "VoiceChatbot", title: "🎙️ VoiceChatbot", screen: "VoiceChatbot" },
     { name: "Profile", title: "👤 Profile", screen: "Profile" },
-    {name: "2FA", title: "2FA", screen: "TwoFactorSetting"}
+    {name: "2FA", title: "2FA", screen: "TwoFactorSetting"},
+    {name: "Chat", title: "Chat", screen: "ChatList"}
   ]
 
   const handleNavigate = (screen: keyof MainStackParamList) => {
@@ -262,6 +275,11 @@ const MainStackScreen = () => {
           options={{ title: "Test" }} 
         />
         <MainStack.Screen 
+          name="TestReview" 
+          component={TestReviewScreen} 
+          options={{ title: "TestReview" }} 
+        />
+        <MainStack.Screen 
           name="Listenings" 
           component={ListeningScreen} 
           options={{
@@ -288,6 +306,13 @@ const MainStackScreen = () => {
           options={{ title: "Quiz" }} 
         />
         <MainStack.Screen 
+          name="QuizReview" 
+          component={QuizReviewScreen} 
+          options={{ title: "Quiz Review",
+            headerLeft: () => null
+           }} 
+        />
+        <MainStack.Screen 
           name="VoiceChatbot" 
           component={VoiceChatScreen} 
           options={{
@@ -310,6 +335,19 @@ const MainStackScreen = () => {
             title: "2FA",
             headerLeft: () => <HamburgerButton />,
           }} 
+        />
+        <MainStack.Screen 
+          name="ChatList"
+          component={ChatListScreen} 
+          options={{
+            title: "Chat",
+            headerLeft: () => <HamburgerButton />,
+          }} 
+        />
+        <MainStack.Screen 
+          name="ChatDetail" 
+          component={ChatDetailScreen} 
+          options={{ title: "ChatDetail" }} 
         />
       </MainStack.Navigator>
 

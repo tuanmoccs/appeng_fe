@@ -1,20 +1,29 @@
 // src/types/quiz.ts
-export interface Quiz {
-  id: number;
-  title: string;
-  description: string;
-  lesson_id: number;
-  questions?: QuizQuestion[];
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface QuizQuestion {
+export interface Question {
   id: number;
   quiz_id: number;
   question: string;
   options: string[];
-  correct_answer?: string; // Chỉ có ở backend, không gửi đến frontend
+  correct_answer?: string; // Optional vì không trả về khi làm quiz
+}
+
+export interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+  lesson_id?: number;
+  lesson?: {
+    id: number;
+    title: string;
+  };
+  questions?: Question[];
+  user_latest_result?: UserLatestResult | null; // THÊM FIELD NÀY
+}
+
+export interface UserLatestResult {
+  score: number;
+  completed_at: string;
+  total_questions: number;
 }
 
 export interface QuizResult {
@@ -23,26 +32,16 @@ export interface QuizResult {
   total_questions: number;
   percentage: number;
   correct_answers: number[];
-  incorrect_answers: Array<{
-    question_id: number;
-    user_answer: string | null;
-    correct_answer: string;
-  }>;
+  incorrect_answers: IncorrectAnswer[];
   passed: boolean;
 }
 
-export interface UserQuizResult {
-  id: number;
-  user_id: number;
-  quiz_id: number;
-  score: number;
-  total_questions: number;
-  answers: Record<string, string>;
-  created_at: string;
-  updated_at: string;
-  quiz?: {
-    id: number;
-    title: string;
-    lesson_id: number;
-  };
+export interface IncorrectAnswer {
+  question_id: number;
+  user_answer: string | null;
+  correct_answer: string;
+}
+
+export interface UserAnswers {
+  [questionId: number]: string;
 }
