@@ -15,6 +15,8 @@ export interface ResetPasswordOTPRequest {
 export interface OTPResponse {
   success: boolean
   message: string
+  cleared_lock?: boolean
+  require_relogin?: boolean
 }
 
 export const sendResetOTP = async (email: string): Promise<OTPResponse> => {
@@ -25,7 +27,7 @@ export const sendResetOTP = async (email: string): Promise<OTPResponse> => {
     return response.data
   } catch (error: any) {
     console.error("❌ Send OTP error:", error)
-    
+
     if (error.response?.data?.message) {
       throw new Error(error.response.data.message)
     } else if (error.response?.data?.errors?.email) {
@@ -41,10 +43,15 @@ export const resetPasswordWithOTP = async (data: ResetPasswordOTPRequest): Promi
     console.log("🔐 Resetting password with OTP for:", data.email)
     const response = await api.post(ENDPOINTS.RESET_PASSWORD_OTP, data)
     console.log("✅ Password reset successfully:", response.data)
+
+    if (response.data.cleared_lock) {
+      console.log("🔓 Account lock cleared after password reset")
+    }
+
     return response.data
   } catch (error: any) {
     console.error("❌ Reset password with OTP error:", error)
-    
+
     if (error.response?.data?.message) {
       throw new Error(error.response.data.message)
     } else if (error.response?.data?.errors) {

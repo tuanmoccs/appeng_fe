@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+"use client"
+
+import { useState, useEffect, useRef } from "react"
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,162 +13,167 @@ import {
   Alert,
   Keyboard,
   TouchableWithoutFeedback,
-} from 'react-native';
-import { COLORS } from '../constants/colors';
-import { resetPasswordWithOTP, sendResetOTP } from '../services/otpService';
-import { validateEmail } from '../utils/validation';
-import { styles } from '../styles/OTPVerification.styles';
+} from "react-native"
+import { COLORS } from "../constants/colors"
+import { resetPasswordWithOTP, sendResetOTP } from "../services/otpService"
+import { styles } from "../styles/OTPVerification.styles"
+import { useDispatch } from "react-redux"
+import { clearLockStatus } from "../store/slices/authSlice"
 
 const OTPVerificationScreen = ({ navigation, route }: any) => {
-  const { email } = route.params;
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isResending, setIsResending] = useState(false);
-  const [countdown, setCountdown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
+  const { email } = route.params
+  const dispatch = useDispatch()
+  const [otp, setOtp] = useState(["", "", "", "", "", ""])
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+  const [countdown, setCountdown] = useState(60)
+  const [canResend, setCanResend] = useState(false)
 
   // Refs for OTP inputs
-  const otpRefs = useRef<Array<TextInput | null>>([]); 
+  const otpRefs = useRef<Array<TextInput | null>>([])
 
   useEffect(() => {
     // Start countdown timer
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          setCanResend(true);
-          return 0;
+          setCanResend(true)
+          return 0
         }
-        return prev - 1;
-      });
-    }, 1000);
+        return prev - 1
+      })
+    }, 1000)
 
-    return () => clearInterval(timer);
-  }, []);
+    return () => clearInterval(timer)
+  }, [])
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {}
 
     // Validate OTP
-    const otpString = otp.join('');
+    const otpString = otp.join("")
     if (otpString.length !== 6) {
-      newErrors.otp = 'Vui lòng nhập đầy đủ mã OTP 6 số';
+      newErrors.otp = "Vui lòng nhập đầy đủ mã OTP 6 số"
     } else if (!/^\d{6}$/.test(otpString)) {
-      newErrors.otp = 'Mã OTP chỉ được chứa số';
+      newErrors.otp = "Mã OTP chỉ được chứa số"
     }
 
     // Validate password
     if (!password.trim()) {
-      newErrors.password = 'Vui lòng nhập mật khẩu mới';
+      newErrors.password = "Vui lòng nhập mật khẩu mới"
     } else if (password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+      newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự"
     }
 
     // Validate confirm password
     if (!confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu';
+      newErrors.confirmPassword = "Vui lòng xác nhận mật khẩu"
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      newErrors.confirmPassword = "Mật khẩu xác nhận không khớp"
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleOTPChange = (value: string, index: number) => {
-    if (!/^\d*$/.test(value)) return; // Only allow digits
+    if (!/^\d*$/.test(value)) return // Only allow digits
 
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
+    const newOtp = [...otp]
+    newOtp[index] = value
+    setOtp(newOtp)
 
     // Clear OTP error when user starts typing
     if (errors.otp) {
-      setErrors(prev => ({ ...prev, otp: '' }));
+      setErrors((prev) => ({ ...prev, otp: "" }))
     }
 
     // Auto-focus next input
     if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
+      otpRefs.current[index + 1]?.focus()
     }
-  };
+  }
 
   const handleOTPKeyPress = (key: string, index: number) => {
-    if (key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
+    if (key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus()
     }
-  };
+  }
 
   const handleResetPassword = async () => {
-    Keyboard.dismiss();
-    
-    if (!validateForm()) return;
+    Keyboard.dismiss()
 
-    setIsLoading(true);
+    if (!validateForm()) return
+
+    setIsLoading(true)
     try {
-      await resetPasswordWithOTP({
+      const result = await resetPasswordWithOTP({
         email,
-        otp: otp.join(''),
+        otp: otp.join(""),
         password,
         password_confirmation: confirmPassword,
-      });
+      })
+
+      // Clear the lock status in Redux state
+      dispatch(clearLockStatus())
+
+      console.log("✅ Password reset successful, lock cleared")
 
       Alert.alert(
-        'Thành công',
-        'Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập với mật khẩu mới.',
+        "Thành công",
+        "Mật khẩu đã được đặt lại thành công. Tất cả phiên đăng nhập cũ đã bị hủy. Vui lòng đăng nhập với mật khẩu mới.",
         [
           {
-            text: 'Đăng nhập',
-            onPress: () => navigation.navigate('Login'),
+            text: "Đăng nhập",
+            onPress: () => navigation.navigate("Login"),
           },
-        ]
-      );
+        ],
+      )
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message);
+      Alert.alert("Lỗi", error.message)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleResendOTP = async () => {
-    if (!canResend) return;
+    if (!canResend) return
 
-    setIsResending(true);
+    setIsResending(true)
     try {
-      await sendResetOTP(email);
-      setCanResend(false);
-      setCountdown(60);
-      Alert.alert('Thành công', 'Mã OTP mới đã được gửi đến email của bạn.');
+      await sendResetOTP(email)
+      setCanResend(false)
+      setCountdown(60)
+      Alert.alert("Thành công", "Mã OTP mới đã được gửi đến email của bạn.")
     } catch (error: any) {
-      Alert.alert('Lỗi', error.message);
+      Alert.alert("Lỗi", error.message)
     } finally {
-      setIsResending(false);
+      setIsResending(false)
     }
-  };
+  }
 
   const dismissKeyboard = () => {
-    Keyboard.dismiss();
-  };
+    Keyboard.dismiss()
+  }
 
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.formContainer}>
             <Text style={styles.title}>Xác thực OTP</Text>
-            <Text style={styles.description}>
-              Chúng tôi đã gửi mã OTP 6 số đến email: {email}
-            </Text>
+            <Text style={styles.description}>Chúng tôi đã gửi mã OTP 6 số đến email: {email}</Text>
 
             {/* OTP Input */}
             <View style={styles.otpContainer}>
@@ -177,19 +183,16 @@ const OTPVerificationScreen = ({ navigation, route }: any) => {
                   <TextInput
                     key={index}
                     ref={(r) => {
-                        otpRefs.current[index] = r;   // gán xong là hết, không return
+                      otpRefs.current[index] = r // gán xong là hết, không return
                     }}
-                    style={[
-                        styles.otpInput,
-                        errors.otp ? styles.inputError : null,
-                    ]}
+                    style={[styles.otpInput, errors.otp ? styles.inputError : null]}
                     value={digit}
                     onChangeText={(value) => handleOTPChange(value, index)}
                     onKeyPress={({ nativeEvent }) => handleOTPKeyPress(nativeEvent.key, index)}
                     keyboardType="numeric"
                     maxLength={1}
                     textAlign="center"
-                    />
+                  />
                 ))}
               </View>
               {errors.otp ? <Text style={styles.errorText}>{errors.otp}</Text> : null}
@@ -199,14 +202,10 @@ const OTPVerificationScreen = ({ navigation, route }: any) => {
             <View style={styles.resendContainer}>
               {canResend ? (
                 <TouchableOpacity onPress={handleResendOTP} disabled={isResending}>
-                  <Text style={styles.resendText}>
-                    {isResending ? 'Đang gửi...' : 'Gửi lại mã OTP'}
-                  </Text>
+                  <Text style={styles.resendText}>{isResending ? "Đang gửi..." : "Gửi lại mã OTP"}</Text>
                 </TouchableOpacity>
               ) : (
-                <Text style={styles.countdownText}>
-                  Gửi lại sau {countdown}s
-                </Text>
+                <Text style={styles.countdownText}>Gửi lại sau {countdown}s</Text>
               )}
             </View>
 
@@ -220,9 +219,9 @@ const OTPVerificationScreen = ({ navigation, route }: any) => {
                 secureTextEntry
                 value={password}
                 onChangeText={(text) => {
-                  setPassword(text);
+                  setPassword(text)
                   if (errors.password) {
-                    setErrors(prev => ({ ...prev, password: '' }));
+                    setErrors((prev) => ({ ...prev, password: "" }))
                   }
                 }}
               />
@@ -239,9 +238,9 @@ const OTPVerificationScreen = ({ navigation, route }: any) => {
                 secureTextEntry
                 value={confirmPassword}
                 onChangeText={(text) => {
-                  setConfirmPassword(text);
+                  setConfirmPassword(text)
                   if (errors.confirmPassword) {
-                    setErrors(prev => ({ ...prev, confirmPassword: '' }));
+                    setErrors((prev) => ({ ...prev, confirmPassword: "" }))
                   }
                 }}
                 onSubmitEditing={handleResetPassword}
@@ -273,7 +272,7 @@ const OTPVerificationScreen = ({ navigation, route }: any) => {
         </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
-  );
-};
+  )
+}
 
-export default OTPVerificationScreen;
+export default OTPVerificationScreen

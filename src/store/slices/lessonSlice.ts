@@ -1,7 +1,7 @@
 // src/store/slices/lessonSlice.ts
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit"
 import * as lessonService from "../../services/LessonService"
-import type { Lesson, LessonStats } from "../../services/LessonService"
+import type { Lesson, LessonStats } from "../../types/lesson"
 
 interface LessonState {
   lessons: Lesson[]

@@ -7,13 +7,13 @@ import store from './src/store/store';
 import AppNavigator from './src/navigation/AppNavigator';
 import { COLORS } from './src/constants/colors';
 import { useEffect } from 'react';
-import { setupAxiosInterceptors } from './src/services/authService';
+import { initializeAuth } from './src/services/authService';
 
 function App(): React.ReactNode {
   useEffect(() => {
     // Setup interceptor khi app khởi động
-    setupAxiosInterceptors();
-    console.log('Axios interceptors configured');
+    initializeAuth();
+    console.log('initializeAuth configured');
   }, [])
   return (
     <SafeAreaProvider>

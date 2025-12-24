@@ -136,13 +136,18 @@ const authSlice = createSlice({
       state.require2FA = false
       state.pending2FAData = null
     },
+    clearLockStatus: (state) => {
+      state.isLocked = false
+      state.lockUntil = null
+      state.attempts = 0
+      state.error = null
+    },
     clear2FARequirement: (state) => {
       state.require2FA = false
       state.pending2FAData = null
     },
     setPending2FAData: (state, action: PayloadAction<{ email: string; password: string }>) => {
       state.pending2FAData = action.payload
-      // Không set require2FA ở đây, sẽ được set trong login.rejected
     },
   },
   extraReducers: (builder) => {
@@ -180,7 +185,7 @@ const authSlice = createSlice({
         } else {
           state.error = payload?.message || "Đăng nhập thất bại"
           state.require2FA = false
-          state.pending2FAData = null // Clear nếu không phải 2FA
+          state.pending2FAData = null
         }
       })
 
@@ -243,5 +248,5 @@ const authSlice = createSlice({
   },
 })
 
-export const { clearError, resetAuth, clear2FARequirement, setPending2FAData } = authSlice.actions
+export const { clearError, resetAuth, clearLockStatus, clear2FARequirement, setPending2FAData } = authSlice.actions
 export default authSlice.reducer
