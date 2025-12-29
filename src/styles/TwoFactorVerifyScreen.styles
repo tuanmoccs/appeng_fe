@@ -1,0 +1,121 @@
+// src/styles/TwoFactorVerifyScreen.styles.ts
+import { StyleSheet } from "react-native"
+import { COLORS } from "../constants/colors"
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.BACKGROUND,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: "center",
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: COLORS.PRIMARY,
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  email: {
+    fontSize: 14,
+    color: COLORS.PRIMARY,
+    fontWeight: "600",
+    marginTop: 8,
+  },
+  formContainer: {
+    width: "100%",
+  },
+  inputContainer: {
+    marginBottom: 24,
+  },
+  input: {
+    backgroundColor: COLORS.WHITE,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    letterSpacing: 8,
+    color: COLORS.TEXT_PRIMARY,
+  },
+  inputError: {
+    borderColor: COLORS.ERROR,
+    borderWidth: 2,
+  },
+  errorText: {
+    color: COLORS.ERROR,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  attemptsText: {
+    color: COLORS.WARNING,
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  button: {
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  verifyButton: {
+    backgroundColor: COLORS.PRIMARY,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  recoveryButton: {
+    padding: 12,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  recoveryButtonText: {
+    color: COLORS.PRIMARY,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  cancelButton: {
+    padding: 12,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    color: COLORS.TEXT_SECONDARY,
+    fontSize: 14,
+  },
+  helpContainer: {
+    marginTop: 32,
+    padding: 16,
+    backgroundColor: COLORS.LIGHT_GRAY,
+    borderRadius: 12,
+  },
+  helpText: {
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+})

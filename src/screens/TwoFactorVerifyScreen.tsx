@@ -59,9 +59,18 @@ const TwoFactorVerifyScreen: React.FC<Props> = ({ route, navigation }) => {
       console.log("[v0] 2FA verify response:", response.data)
 
       if (response.data.success) {
-        const { user, token } = response.data
+        const { user, token, refresh_token } = response.data
+
+        // ✅ LƯU CẢ 2 TOKENS
+        console.log("[v0] Saving tokens:", {
+          has_token: !!token,
+          has_refresh_token: !!refresh_token,
+          token_length: token?.length,
+          refresh_token_length: refresh_token?.length,
+        })
 
         await AsyncStorage.setItem("auth_token", token)
+        await AsyncStorage.setItem("refresh_token", refresh_token)  // ← DÒNG QUAN TRỌNG!
 
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`
 

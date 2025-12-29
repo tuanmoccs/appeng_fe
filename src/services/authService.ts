@@ -39,11 +39,11 @@ export const refreshToken = async (): Promise<string | null> => {
       const refreshTokenValue = await AsyncStorage.getItem("refresh_token")
 
       if (!refreshTokenValue) {
-        console.log("[v0] No refresh token found")
+        console.log("  No refresh token found")
         return null
       }
 
-      console.log(`[v0] Refresh attempt ${attempt + 1}/${maxRetries}`)
+      console.log(`  Refresh attempt ${attempt + 1}/${maxRetries}`)
 
       const response = await axios.post(
         `${API_BASE_URL}/auth/refresh-token`,
@@ -63,8 +63,8 @@ export const refreshToken = async (): Promise<string | null> => {
         throw new Error("Invalid refresh response")
       }
 
-      console.log("[v0] Token refreshed successfully!")
-      console.log("[v0] Token expires in:", expires_in, "seconds")
+      console.log("  Token refreshed successfully!")
+      console.log("  Token expires in:", expires_in, "seconds")
 
       // Save new tokens
       await AsyncStorage.setItem("auth_token", token)
@@ -76,22 +76,22 @@ export const refreshToken = async (): Promise<string | null> => {
       return token
     } catch (error: any) {
       lastError = error
-      console.error(`[v0] Refresh attempt ${attempt + 1} failed:`, error.message)
+      console.error(`  Refresh attempt ${attempt + 1} failed:`, error.message)
 
       if (error.response?.data?.require_login) {
-        console.log("[v0] Server requires login, stopping retry")
+        console.log("  Server requires login, stopping retry")
         break
       }
 
       if (attempt < maxRetries - 1) {
         const delay = Math.pow(2, attempt) * 1000
-        console.log(`[v0] Waiting ${delay}ms before retry...`)
+        console.log(`  Waiting ${delay}ms before retry...`)
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
     }
   }
 
-  console.error("[v0] All refresh attempts failed, clearing auth")
+  console.error("  All refresh attempts failed, clearing auth")
   await AsyncStorage.removeItem("auth_token")
   await AsyncStorage.removeItem("refresh_token")
   delete api.defaults.headers.common["Authorization"]
@@ -101,7 +101,7 @@ export const refreshToken = async (): Promise<string | null> => {
 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
   try {
-    console.log("[v0] Login attempt:", {
+    console.log("  Login attempt:", {
       endpoint: ENDPOINTS.LOGIN,
       email: credentials.email,
       has_otp: !!credentials.otp_code,
@@ -141,25 +141,25 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       throw new Error("Không nhận được thông tin người dùng")
     }
 
-    console.log("[v0] Saving tokens to AsyncStorage...")
-    console.log("[v0] Access token length:", token.length)
-    console.log("[v0] Refresh token length:", refresh_token.length)
-    console.log("[v0] Token expires in:", expires_in, "seconds")
+    console.log("  Saving tokens to AsyncStorage...")
+    console.log("  Access token length:", token.length)
+    console.log("  Refresh token length:", refresh_token.length)
+    console.log("  Token expires in:", expires_in, "seconds")
 
     await AsyncStorage.setItem("auth_token", token)
     await AsyncStorage.setItem("refresh_token", refresh_token)
 
-    console.log("[v0] Setting Authorization header...")
+    console.log("  Setting Authorization header...")
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`
 
     try {
       const userResponse = await api.get(ENDPOINTS.USER)
-      console.log("[v0] Token verification successful")
+      console.log("  Token verification successful")
     } catch (verifyError: any) {
-      console.error("[v0] Token verification failed:", verifyError)
+      console.error("  Token verification failed:", verifyError)
     }
 
-    console.log("[v0] Login successful!")
+    console.log("  Login successful!")
     return { user, token }
   } catch (error: any) {
     if (error.require_2fa) {
@@ -194,7 +194,7 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       throw new Error("Kết nối bị timeout. Vui lòng thử lại.")
     }
 
-    throw new Error("Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.")
+    throw new Error("Sai thông tin đăng nhập")
   }
 }
 
@@ -230,18 +230,18 @@ export const logout = async (): Promise<void> => {
   try {
     const token = await AsyncStorage.getItem("auth_token")
     if (token) {
-      console.log("[v0] Sending logout request to server...")
+      console.log("  Sending logout request to server...")
       await api.post(ENDPOINTS.LOGOUT)
-      console.log("[v0] Server logout successful")
+      console.log("  Server logout successful")
     }
   } catch (error) {
-    console.error("[v0] Logout error:", error)
+    console.error("  Logout error:", error)
   } finally {
-    console.log("[v0] Cleaning up local tokens...")
+    console.log("  Cleaning up local tokens...")
     await AsyncStorage.removeItem("auth_token")
     await AsyncStorage.removeItem("refresh_token")
     delete api.defaults.headers.common["Authorization"]
-    console.log("[v0] Local cleanup completed")
+    console.log("  Local cleanup completed")
   }
 }
 

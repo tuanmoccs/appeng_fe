@@ -112,7 +112,7 @@ const LoginScreen = ({ navigation }: any) => {
         )
       } else {
         const remainingAttempts = 5 - attempts
-        const message = remainingAttempts > 0 ? `${error} (Còn ${remainingAttempts} lần thử)` : error
+        const message = remainingAttempts > 0 ? `${error} (Có ${remainingAttempts} lần thử)` : error
         Alert.alert("Lỗi đăng nhập", message, [{ text: "OK", onPress: () => dispatch(clearError()) }])
       }
     }
